@@ -19,7 +19,10 @@ package com.example.android.BluetoothChat;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,15 +32,23 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 /**
  * This is the main Activity that displays the current chat session.
@@ -67,6 +78,18 @@ public class BluetoothChat extends Activity {
     private ListView mConversationView;
     private EditText mOutEditText;
     private Button mSendButton;
+    
+    // Layout panel
+	private Bitmap bmp;
+	private Matrix matrix = new Matrix();
+	private Bitmap resizedBitmap;
+	
+	private SeekBar seek1, seek2, seek3, seek4;		//the lamp seekbar
+	private View pointer;	// dashboard poioter
+	private Animation am ;	// pointer rotate animation
+	private TextView per1, per2, per3;	//dashboard power percent
+	private View panel_1, panel_2, panel_3;
+	private ToggleButton tab_1, tab_2, tab_3;
 
     // Name of the connected device
     private String mConnectedDeviceName = null;
@@ -93,6 +116,7 @@ public class BluetoothChat extends Activity {
         setContentView(R.layout.main);
         getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
+        initViewById();
         // Set up the custom title
         mTitle = (TextView) findViewById(R.id.title_left_text);
         mTitle.setText(R.string.app_name);
@@ -109,7 +133,158 @@ public class BluetoothChat extends Activity {
         }
     }
 
-    @Override
+    private void initViewById() {
+		// TODO Auto-generated method stub
+		ImageView refresh = (ImageView) findViewById(R.id.refresh);
+		pointer = (View)findViewById(R.id.pointer_view);
+		seek1 = (SeekBar)findViewById(R.id.seekBar1);
+		seek2 = (SeekBar)findViewById(R.id.seekBar2);
+		seek3 = (SeekBar)findViewById(R.id.seekBar3);
+		seek4 = (SeekBar)findViewById(R.id.seekBar4);
+		
+		per1 = (TextView)findViewById(R.id.percent_1);
+		per2 = (TextView)findViewById(R.id.percent_2);
+		per3 = (TextView)findViewById(R.id.percent_3);
+		
+		seek1.setOnSeekBarChangeListener(listener);
+		seek2.setOnSeekBarChangeListener(listener);
+		seek3.setOnSeekBarChangeListener(listener);
+		seek4.setOnSeekBarChangeListener(listener);
+		
+		tab_1 = (ToggleButton)findViewById(R.id.ctrl_tab_1);
+		tab_2 = (ToggleButton)findViewById(R.id.ctrl_tab_2);
+		tab_3 = (ToggleButton)findViewById(R.id.ctrl_tab_3);
+		
+		panel_1 = (View)findViewById(R.id.panel_1);
+		panel_2 = (View)findViewById(R.id.panel_2);
+		panel_3 = (View)findViewById(R.id.panel_3);
+		
+		tab_1.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				// TODO Auto-generated method stub
+				tab_2.setChecked(!tab_1.isChecked());
+				tab_3.setChecked(!tab_1.isChecked());
+				panel_1.setVisibility(View.VISIBLE);
+				panel_2.setVisibility(View.GONE);
+				panel_3.setVisibility(View.GONE);
+				
+			}
+			
+		});
+		
+		tab_2.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				// TODO Auto-generated method stub
+				tab_1.setChecked(!tab_2.isChecked());
+				tab_3.setChecked(!tab_2.isChecked());
+				panel_1.setVisibility(View.GONE);
+				panel_2.setVisibility(View.VISIBLE);
+				panel_3.setVisibility(View.GONE);
+			}
+			
+		});
+		
+		tab_3.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				// TODO Auto-generated method stub
+				tab_1.setChecked(!tab_3.isChecked());
+				tab_2.setChecked(!tab_3.isChecked());
+				panel_1.setVisibility(View.GONE);
+				panel_2.setVisibility(View.GONE);
+				panel_3.setVisibility(View.VISIBLE);
+			}
+			
+		});
+		
+	}
+
+    OnSeekBarChangeListener listener = new OnSeekBarChangeListener() {
+		
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,
+				boolean fromUser) {
+			// TODO Auto-generated method stub
+				Message msg = panelHandler.obtainMessage();
+				msg.what = 0;	// pointer rotate with the corresponding angle
+				msg.arg1 = progress;
+				panelHandler.sendMessage(msg);
+		}
+	};
+    
+	Handler panelHandler = new Handler() {
+
+		@Override
+		public void handleMessage(Message msg) {
+			// TODO Auto-generated method stub
+			super.handleMessage(msg);
+
+			switch (msg.what) {
+			case 0:
+				int sum_angle = (seek1.getProgress() 
+						+ seek2.getProgress() 
+						+ seek3.getProgress() 
+						+ seek4.getProgress()) / 4;
+				
+				// 动画设定(指定旋转动画) (startAngle, endAngle, rotateX, rotateY) 88 17
+				am = new RotateAnimation(200*(sum_angle-0.25f)/100, 
+						200*sum_angle/100, 
+						dip2px(BluetoothChat.this, 53), dip2px(BluetoothChat.this, 11));
+				
+				am.setFillAfter(true);
+
+				pointer.startAnimation(am);
+				
+				per1.setText("" + sum_angle/100);
+				per2.setText("" + sum_angle%100/10);
+				per3.setText("" + sum_angle%100%10);
+				
+				Log.d("DEBUG", "----------");
+
+				break;
+			}
+
+		}
+
+	};
+	
+	
+	/**
+	 * 根据手机的分辨率从 dp 的单位 转成为 px(像素)
+	 */
+	public static int dip2px(Context context, float dpValue) {
+		final float scale = context.getResources().getDisplayMetrics().density;
+		return (int) (dpValue * scale + 0.5f);
+	}
+	 
+	/**
+	 * 根据手机的分辨率从 px(像素) 的单位 转成为 dp
+	 */
+	public static int px2dip(Context context, float pxValue) {
+		final float scale = context.getResources().getDisplayMetrics().density;
+		return (int) (pxValue / scale + 0.5f);
+	}
+	
+	@Override
     public void onStart() {
         super.onStart();
         if(D) Log.e(TAG, "++ ON START ++");
@@ -170,6 +345,7 @@ public class BluetoothChat extends Activity {
 
         // Initialize the buffer for outgoing messages
         mOutStringBuffer = new StringBuffer("");
+        
     }
 
     @Override
