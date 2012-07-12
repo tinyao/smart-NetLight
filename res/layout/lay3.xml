@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/b2g"
+    android:background="@drawable/background"
     android:orientation="vertical" >
 
     <Spinner
@@ -21,14 +21,15 @@
         android:layout_marginLeft="5dip"
         android:layout_marginRight="5dip" >
 
-        <include layout="@layout/short_and_group" />
-
+        <include layout="@layout/leaf_addr_set_lay" />
+        <include layout="@layout/group_set_lay"/>
         <include layout="@layout/fade_ctrl_setting" />
     </LinearLayout>
 
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:background="#000"
         android:layout_margin="10dip" >
 
         <ScrollView
@@ -47,10 +48,10 @@
         <Button 
             android:id="@+id/clear_log"
             android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:layout_alignParentTop="true"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:text="清\n除"/>"
+            android:text="clear"/>"
     </RelativeLayout>
 
 </LinearLayout>

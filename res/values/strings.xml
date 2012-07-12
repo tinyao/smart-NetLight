@@ -39,10 +39,16 @@
     <string name="discoverable">Make discoverable</string>
     
     <string name="short_addr_prompt">可选地址</string>
-    <string name="short_group_prompt">可选从机</string>
+    <string name="short_group_prompt">选择从机(多选)</string>
     <string name="fade_time_spinner_prompt">选择FadeTime的值</string>
     <string name="fade_rate_spinner_prompt">选择FadeRate的值</string>
     
     <string name="short_address_set_ok">从机地址设置 成功！</string>
     <string name="short_address_set_fail">从机地址设置 失败！</string>
+    
+    <string name="leaf_edt_name_hint">leaf name here</string>
+    <string name="leaf_name_btn_txt">OK</string>
+    <string name="leaf_set_btn_txt">Set</string>
+    <string name="group_leaf_join_txt">Join</string>
+    <string name="group_edt_name_hint">group name</string>
 </resources>

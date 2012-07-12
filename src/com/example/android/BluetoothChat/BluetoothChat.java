@@ -34,7 +34,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.support.v4.widget.CursorAdapter;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -49,6 +48,7 @@ import android.view.animation.RotateAnimation;
 import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -94,7 +94,8 @@ public class BluetoothChat extends Activity {
 	public static final int MESSAGE_WRITE = 3;
 	public static final int MESSAGE_DEVICE_NAME = 4;
 	public static final int MESSAGE_TOAST = 5;
-
+	public static final int MESSAGE_ERROR_TOAST = 6;
+	
 	// Key names received from the BluetoothChatService Handler
 	public static final String DEVICE_NAME = "device_name";
 	public static final String TOAST = "toast";
@@ -120,24 +121,26 @@ public class BluetoothChat extends Activity {
 	private TextView per1, per2, per3; // dashboard power percent
 	private View panel_1, panel_2, panel_3;
 	private ToggleButton tab_1;
-	
+
 	// Layout panel 3
 	private Spinner operateSpinner;
 	private View addrPanel;
 	private View fadePanel;
-	
+
+	private ListView leafList, groupLeafList;
+	private Spinner leafAddrSpinner, groupSpinner;
 	private EditText leafNameEdt, groupNameEdt;
-	private Spinner leafAddrSpinner, existLeafSpinner;
-	private Button shortAddrBtn, groupSetBtn;
-	
+	private Button leafNameBtn, leafAddrSet, groupJoinSet;
+
 	private Spinner fadeTimeSpinner, fadeRateSpinner;
 	private Button fadeTimeBtn, fadeRateBtn;
-	
+
 	private TextView LogInfo;
 	private Button clearLogBtn;
 	private ScrollView logScroll;
-	
-	private int flag = -1; //wait for the respond
+	private Cursor leafcursor;
+
+	private int flag = -1; // wait for the respond
 	private String responseCheck;
 
 	// Name of the connected device
@@ -150,9 +153,11 @@ public class BluetoothChat extends Activity {
 	private BluetoothAdapter mBluetoothAdapter = null;
 	// Member object for the chat services
 	private BluetoothChatService mChatService = null;
-	
+
 	private SharedPreferences sp;
-	private MyDBHelper helper; 
+	private MyDBHelper helper;
+	
+	private int leafCurrent = -1;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -171,10 +176,8 @@ public class BluetoothChat extends Activity {
 
 		// getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE,
 		// R.layout.custom_title);
-
-		initViewById();
-		
 		sp = this.getSharedPreferences(PrefConfig.SHARED_PREF_NAME, 0);
+		initViewById();
 
 		// Get local Bluetooth adapter
 		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -269,40 +272,42 @@ public class BluetoothChat extends Activity {
 			}
 
 		});
-		
-		//layout3
-		operateSpinner = (Spinner)layout3.findViewById(R.id.operatons_spi);
-		addrPanel = (View)layout3.findViewById(R.id.short_and_group_panel);
-		fadePanel = (View)layout3.findViewById(R.id.fade_ctrl_panel);
-		
-		leafNameEdt = (EditText)layout3.findViewById(R.id.leaf_name_edt);
-		groupNameEdt = (EditText)layout3.findViewById(R.id.group_name_edt);
-		
-		leafAddrSpinner = (Spinner)layout3.findViewById(R.id.short_addr_spinner);
-		existLeafSpinner = (Spinner)layout3.findViewById(R.id.exist_leaf_spinner);
-		fadeTimeSpinner = (Spinner)layout3.findViewById(R.id.fade_time_spinner);
-		fadeRateSpinner = (Spinner)layout3.findViewById(R.id.fade_rate_spinner);
-		
-		shortAddrBtn = (Button)layout3.findViewById(R.id.short_addr_btn);
-		groupSetBtn = (Button)layout3.findViewById(R.id.group_set_btn);
-		fadeTimeBtn = (Button)layout3.findViewById(R.id.fade_time_btn);
-		fadeRateBtn = (Button)layout3.findViewById(R.id.fade_rate_btn);
-		
-		LogInfo = (TextView)layout3.findViewById(R.id.loginfo);
-		clearLogBtn = (Button)layout3.findViewById(R.id.clear_log);
-		logScroll = (ScrollView)layout3.findViewById(R.id.log_info_scroll);
-		
-		helper = new MyDBHelper(this);
-		helper.openDataBase(helper);
-		fillData2ExistLeafSpinner();
-		
-		operateSpinner.setOnItemSelectedListener(new OnItemSelectedListener(){
+
+		// layout3
+		operateSpinner = (Spinner) layout3.findViewById(R.id.operatons_spi);
+		addrPanel = (View) layout3.findViewById(R.id.short_and_group_panel);
+		fadePanel = (View) layout3.findViewById(R.id.fade_ctrl_panel);
+
+		leafList = (ListView) layout3.findViewById(R.id.leaf_list);
+		leafAddrSpinner = (Spinner) layout3
+				.findViewById(R.id.leaf_addr_spinner);
+		leafNameEdt = (EditText) layout3.findViewById(R.id.leaf_name_edt);
+		leafNameBtn = (Button) layout3.findViewById(R.id.leaf_name_ok_btn);
+		leafAddrSet = (Button) layout3.findViewById(R.id.leaf_set_btn);
+
+		groupLeafList = (ListView) layout3.findViewById(R.id.group_leaf_list);
+		groupSpinner = (Spinner) layout3.findViewById(R.id.group_spinner);
+		groupNameEdt = (EditText) layout3.findViewById(R.id.leaf_name_edt);
+		groupJoinSet = (Button) layout3.findViewById(R.id.group_join_btn);
+
+		fadeTimeSpinner = (Spinner) layout3.findViewById(R.id.fade_time_spinner);
+		fadeRateSpinner = (Spinner) layout3.findViewById(R.id.fade_rate_spinner);
+		fadeTimeBtn = (Button) layout3.findViewById(R.id.fade_time_btn);
+		fadeRateBtn = (Button) layout3.findViewById(R.id.fade_rate_btn);
+
+		LogInfo = (TextView) layout3.findViewById(R.id.loginfo);
+		clearLogBtn = (Button) layout3.findViewById(R.id.clear_log);
+		logScroll = (ScrollView) layout3.findViewById(R.id.log_info_scroll);
+
+		initDatabase();
+
+		operateSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 			@Override
 			public void onItemSelected(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
 				// TODO Auto-generated method stub
-				switch(arg2){
+				switch (arg2) {
 				case 0:
 					addrPanel.setVisibility(View.VISIBLE);
 					fadePanel.setVisibility(View.GONE);
@@ -317,36 +322,37 @@ public class BluetoothChat extends Activity {
 			@Override
 			public void onNothingSelected(AdapterView<?> arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 		});
+
+		leafAddrSpinner.setOnItemSelectedListener(spinnerSelectedListener);
+		groupSpinner.setOnItemSelectedListener(spinnerSelectedListener);
 		
-		shortAddrBtn.setOnClickListener(new OnClickListener(){
+		leafNameBtn.setOnClickListener(lay3btnListener);
+		leafAddrSet.setOnClickListener(lay3btnListener);
+		groupJoinSet.setOnClickListener(lay3btnListener);
+		clearLogBtn.setOnClickListener(lay3btnListener);
+		
+		leafList.setOnItemClickListener(new OnItemClickListener(){
 
 			@Override
-			public void onClick(View arg0) {
+			public void onItemClick(AdapterView<?> arg0, View arg1, int pos,
+					long id) {
 				// TODO Auto-generated method stub
-				String address = leafAddrSpinner.getSelectedItem().toString();
-				Log.d("DEBUG", "leaf address ---- " + address);
-				setShortAddress(address);
+				leafcursor.moveToPosition(pos);
+				String leafName = leafcursor.getString(leafcursor.getColumnIndex(MyDBHelper.LEAF_NAME));
+				int spos = Integer.valueOf(
+						leafcursor.getString(leafcursor.getColumnIndex(MyDBHelper.LEAF_ADDR)));
+				leafAddrSpinner.setSelection((spos - 1)/2);
+				leafNameEdt.setText(leafName);
+				leafCurrent = pos; // 设置当前操作的从机position
 			}
 			
 		});
-		
-		clearLogBtn.setOnClickListener(new OnClickListener(){
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				LogInfo.setText("");
-			}
-			
-		});
-			
-		
 	}
-
 
 	OnSeekBarChangeListener listener = new OnSeekBarChangeListener() {
 
@@ -539,8 +545,10 @@ public class BluetoothChat extends Activity {
 	private void sendMessage(String message) {
 		// Check that we're actually connected before trying anything
 		if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
-			Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT)
-					.show();
+			Message msg = mHandler.obtainMessage();
+			msg.what = MESSAGE_ERROR_TOAST;
+			msg.obj = getResources().getString(R.string.not_connected);
+			mHandler.sendMessage(msg);
 			return;
 		}
 
@@ -674,6 +682,11 @@ public class BluetoothChat extends Activity {
 						msg.getData().getString(TOAST), Toast.LENGTH_SHORT)
 						.show();
 				break;
+			case MESSAGE_ERROR_TOAST:
+				Toast.makeText(getApplicationContext(),
+						String.valueOf(msg.obj), Toast.LENGTH_SHORT)
+						.show();
+				break;
 			}
 		}
 	};
@@ -710,35 +723,6 @@ public class BluetoothChat extends Activity {
 		}
 	}
 
-	protected void dealMsgResponse(String readMessage) {
-		// TODO Auto-generated method stub
-		LogInfo.append("\n> " + "receive str: " + readMessage);
-		switch(flag){
-		case -1:
-			break;
-		case PrefConfig.QUERY_SHORT_ADDR_SET: //设置从机短地址
-			if(readMessage.contains(responseCheck)){
-				LogInfo.append("\n> " + getResources().getString(R.string.short_address_set_ok));
-				//将新设置的从机添加到sharedpref中
-				
-			}else{
-				LogInfo.append("\n> " + getResources().getString(R.string.short_address_set_fail));
-//				Toast.makeText(this, 
-//						getResources().getString(R.string.short_address_set_fail), 
-//						Toast.LENGTH_SHORT).show();
-			}
-			saveLeafAfterSet();
-			break;
-		}
-		
-		logScroll.post(new Runnable() {
-			public void run() {
-				logScroll.fullScroll(ScrollView.FOCUS_DOWN);
-			}
-		});
-	}
-
-
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -762,10 +746,6 @@ public class BluetoothChat extends Activity {
 		return false;
 	}
 
-	
-	
-	
-	
 	/**
 	 * 页卡切换监听
 	 */
@@ -814,21 +794,98 @@ public class BluetoothChat extends Activity {
 		public void onPageScrollStateChanged(int arg0) {
 		}
 	}
+
+	/* layout3 Button Click Listener */
+	public View.OnClickListener lay3btnListener = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			switch (v.getId()) {
+			case R.id.leaf_name_ok_btn:	// 更新从机名称
+				int updateId = Integer.
+					valueOf(leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ID)));
+				String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+				helper.update(updateId, 
+						leafNameEdt.getText().toString(), addr);
+				fillData2LeafList();
+				break;
+			case R.id.leaf_set_btn:		// 设置从机地址
+				String address = leafAddrSpinner.getSelectedItem().toString();// 获取地址str
+				// 设置shortAddress，成功后将载数据库中更新从机（insert/update）
+				setShortAddress(address);
+				break;
+			case R.id.group_join_btn:	//设置组成员 
+				
+				break;
+			case R.id.clear_log:
+				LogInfo.setText("");
+				break;
+			}
+		}
+
+	};
+
+	/* layout3 Spinner Selected Listener */
+	public AdapterView.OnItemSelectedListener spinnerSelectedListener = new OnItemSelectedListener() {
+
+		@Override
+		public void onItemSelected(AdapterView<?> arg0, View v, int arg2,
+				long arg3) {
+			// TODO Auto-generated method stub
+			switch (v.getId()) {
+			case R.id.leaf_addr_spinner:
+				
+				break;
+			}
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> arg0) {
+			// TODO Auto-generated method stub
+
+		}
+
+	};
+
+	/*
+	 * 初始化数据库
+	 */
+	public void initDatabase(){
+		//从机leaf数据库
+		helper = new MyDBHelper(this);
+		helper.openDataBase(helper);
+		if(sp.getBoolean(PrefConfig.FIRST_RUN, true)){
+			for(int i=0; i<16; i++){ //初始化16个从机，地址未设置
+				helper.insert("Leaf" + i, "03");
+			}
+			sp.edit().putBoolean(PrefConfig.FIRST_RUN, false).commit();
+		}
+		fillData2LeafList();
+	}
 	
-	
-	/*===========================================================================*/
-	/*================================发送指令====================================*/
-	/*===========================================================================*/
-	
+	/*
+	 * ==========================================================================
+	 * =
+	 */
+	/* ================================发送指令==================================== */
+	/*
+	 * ==========================================================================
+	 * =
+	 */
+
 	/**
 	 * 设置从机地址，并写入flash
-	 * @param time 睡眠时长millsecond
-	 * @param cmd 指令
+	 * 
+	 * @param time
+	 *            睡眠时长millsecond
+	 * @param cmd
+	 *            指令
 	 */
 	protected void setShortAddress(final String address) {
 		// TODO Auto-generated method stub
-		new Thread(){
-			public void run(){
+		new Thread() {
+			public void run() {
 				try {
 					sendMessage("A3" + address);
 					sleep(200);
@@ -839,10 +896,10 @@ public class BluetoothChat extends Activity {
 					sendMessage("ff82");
 					sleep(150);
 					sendMessage("ff82");
-					//查询是否设置成功
+					// 查询是否设置成功
 					sleep(200);
 					sendMessage("ff9f");
-					flag = PrefConfig.QUERY_SHORT_ADDR_SET; //等待响应
+					flag = PrefConfig.QUERY_SHORT_ADDR_SET; // 等待响应
 					responseCheck = address;
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -851,7 +908,7 @@ public class BluetoothChat extends Activity {
 			}
 		}.start();
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -859,29 +916,58 @@ public class BluetoothChat extends Activity {
 		// TODO Auto-generated method stub
 		String leafName = leafNameEdt.getText().toString();
 		String leafAddr = leafAddrSpinner.getSelectedItem().toString();
-		
+
 		helper.insert(leafName, leafAddr);
 	}
-	
-	public void fillData2ExistLeafSpinner(){
-		Cursor cursor = helper.select();
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, 
-	               android.R.layout.simple_list_item_checked, 
-	               cursor, 
-	               new String[]{ helper.LEAF_NAME }, 
-	               new int[]{ android.R.id.text1 });
-	        
-	     existLeafSpinner.setAdapter(adapter);
+
+	public void fillData2LeafList() {
+		leafcursor = helper.select();
+		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this,
+				android.R.layout.simple_list_item_1, leafcursor,
+				new String[] { MyDBHelper.LEAF_NAME, MyDBHelper.LEAF_ADDR},
+				new int[] { android.R.id.text1, android.R.id.text2 });
+		leafList.setAdapter(adapter);
 	}
 	
+	public void fillData2LeafSpinner(){
+		
+	}
+
 	/**
 	 * 
 	 * @param leafAddr
 	 * @param GroupId
 	 */
-	protected void addLeafToGroup(String leafAddr, String GroupId){
-		
+	protected void addLeafToGroup(String leafAddr, String GroupId) {
+
 	}
 	
-	
+	protected void dealMsgResponse(String readMessage) {
+		// TODO Auto-generated method stub
+		LogInfo.append("\n> " + "receive str: " + readMessage);
+		switch (flag) {
+		case -1:
+			break;
+		case PrefConfig.QUERY_SHORT_ADDR_SET: // 设置从机短地址
+			if (readMessage.contains(responseCheck)) {
+				LogInfo.append("\n> " + getResources().getString(R.string.short_address_set_ok));
+				// 将新设置的从机添加到sharedpref中
+
+			} else {
+				LogInfo.append("\n> " + getResources().getString( R.string.short_address_set_fail));
+				// Toast.makeText(this,
+				// getResources().getString(R.string.short_address_set_fail),
+				// Toast.LENGTH_SHORT).show();
+			}
+			saveLeafAfterSet();
+			break;
+		}
+
+		logScroll.post(new Runnable() {
+			public void run() {
+				logScroll.fullScroll(ScrollView.FOCUS_DOWN);
+			}
+		});
+	}
+
 }
