@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/b2g"
+    android:orientation="vertical" >
+
+    <Spinner
+        android:id="@+id/operatons_spi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dip"
+        android:layout_marginRight="5dip"
+        android:layout_marginTop="10dip"
+        android:entries="@array/operations" />
+
+    <LinearLayout
+        android:id="@+id/ctrl_panel"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dip"
+        android:layout_marginRight="5dip" >
+
+        <include layout="@layout/short_and_group" />
+
+        <include layout="@layout/fade_ctrl_setting" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_margin="10dip" >
+
+        <ScrollView
+            android:id="@+id/log_info_scroll"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+
+            <TextView
+                android:id="@+id/loginfo"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="> log out here..."
+                android:textColor="#00EC00" />
+        </ScrollView>
+        
+        <Button 
+            android:id="@+id/clear_log"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:text="清\n除"/>"
+    </RelativeLayout>
+
+</LinearLayout>
