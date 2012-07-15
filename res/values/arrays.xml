@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="operations">
-        <item>Short Addr. and Group</item>
+        <item>Short Addr. Set</item>
+        <item>Group Join and Remove</item>
         <item>Fade Control Settings</item>
         <item>Power Control Settings</item>
         <item>Query Device Infomation</item>
@@ -13,16 +14,16 @@
 	    <item>05</item>
 	    <item>07</item>
 	    <item>09</item>
-	    <item>0B</item>
-	    <item>0D</item>
-	    <item>0F</item>
 	    <item>11</item>
 	    <item>13</item>
 	    <item>15</item>
 	    <item>17</item>
 	    <item>19</item>
-	    <item>1B</item>
-	    <item>1D</item>
+	    <item>21</item>
+	    <item>23</item>
+	    <item>25</item>
+	    <item>27</item>
+	    <item>29</item>
 	</string-array>
 	
 	<string-array name="fade_time_array">

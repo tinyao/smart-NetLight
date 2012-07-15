@@ -24,6 +24,7 @@
         <include layout="@layout/leaf_addr_set_lay" />
         <include layout="@layout/group_set_lay"/>
         <include layout="@layout/fade_ctrl_setting" />
+        
     </LinearLayout>
 
     <RelativeLayout

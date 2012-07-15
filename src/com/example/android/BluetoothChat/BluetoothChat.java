@@ -17,13 +17,20 @@
 package com.example.android.BluetoothChat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Stack;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -36,6 +43,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -122,9 +130,14 @@ public class BluetoothChat extends Activity {
 	private View panel_1, panel_2, panel_3;
 	private ToggleButton tab_1;
 
+	private Button adjustBtn, factorBtn;
+	private TextView lampA, lampB, lampC, lampD;
+	private ImageView refreshBtn;
+	
 	// Layout panel 3
 	private Spinner operateSpinner;
 	private View addrPanel;
+	private View groupPanel;
 	private View fadePanel;
 
 	private ListView leafList, groupLeafList;
@@ -134,14 +147,15 @@ public class BluetoothChat extends Activity {
 
 	private Spinner fadeTimeSpinner, fadeRateSpinner;
 	private Button fadeTimeBtn, fadeRateBtn;
-
+	
 	private TextView LogInfo;
 	private Button clearLogBtn;
 	private ScrollView logScroll;
-	private Cursor leafcursor;
+	private Cursor leafcursor, groupcursor;
 
 	private int flag = -1; // wait for the respond
 	private String responseCheck;
+	private int toGroupId;
 
 	// Name of the connected device
 	private String mConnectedDeviceName = null;
@@ -156,9 +170,17 @@ public class BluetoothChat extends Activity {
 
 	private SharedPreferences sp;
 	private MyDBHelper helper;
+	private GroupDBHelper groupHelper;
 	
 	private int leafCurrent = -1;
+	private int groupCurrent = -1;
+	private String groupJoinLeaf = "";
+	private boolean queryLuxA, queryLuxB, queryLuxC, queryLuxD;
+	
+	private AlarmReceiver alarmReceiver;
+	private Stack sendStack;
 
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -189,6 +211,7 @@ public class BluetoothChat extends Activity {
 			finish();
 			return;
 		}
+		
 	}
 
 	/**
@@ -234,7 +257,6 @@ public class BluetoothChat extends Activity {
 
 	private void initViewById() {
 		// TODO Auto-generated method stub
-		ImageView refresh = (ImageView) layout2.findViewById(R.id.refresh);
 		pointer = (View) layout2.findViewById(R.id.pointer_view);
 		seek1 = (SeekBar) layout2.findViewById(R.id.seekBar1);
 		seek2 = (SeekBar) layout2.findViewById(R.id.seekBar2);
@@ -249,7 +271,20 @@ public class BluetoothChat extends Activity {
 		seek2.setOnSeekBarChangeListener(listener);
 		seek3.setOnSeekBarChangeListener(listener);
 		seek4.setOnSeekBarChangeListener(listener);
-
+		
+		adjustBtn = (Button)layout2.findViewById(R.id.auto_adjust);
+		factorBtn = (Button)layout2.findViewById(R.id.factor_set);
+		lampA = (TextView)layout2.findViewById(R.id.lamp_a_lux);
+		lampB = (TextView)layout2.findViewById(R.id.lamp_b_lux);
+		lampC = (TextView)layout2.findViewById(R.id.lamp_c_lux);
+		lampD = (TextView)layout2.findViewById(R.id.lamp_d_lux);
+		refreshBtn = (ImageView)layout2.findViewById(R.id.refresh);
+		
+		
+		adjustBtn.setOnClickListener(lay3btnListener);
+		factorBtn.setOnClickListener(lay3btnListener);
+		refreshBtn.setOnClickListener(lay3btnListener);
+		
 		tab_1 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_1);
 
 		panel_1 = (View) layout2.findViewById(R.id.panel_1);
@@ -275,7 +310,8 @@ public class BluetoothChat extends Activity {
 
 		// layout3
 		operateSpinner = (Spinner) layout3.findViewById(R.id.operatons_spi);
-		addrPanel = (View) layout3.findViewById(R.id.short_and_group_panel);
+		addrPanel = (View) layout3.findViewById(R.id.short_addr_panel);
+		groupPanel = (View) layout3.findViewById(R.id.group_set_panel);
 		fadePanel = (View) layout3.findViewById(R.id.fade_ctrl_panel);
 
 		leafList = (ListView) layout3.findViewById(R.id.leaf_list);
@@ -310,10 +346,17 @@ public class BluetoothChat extends Activity {
 				switch (arg2) {
 				case 0:
 					addrPanel.setVisibility(View.VISIBLE);
+					groupPanel.setVisibility(View.GONE);
 					fadePanel.setVisibility(View.GONE);
 					break;
 				case 1:
 					addrPanel.setVisibility(View.GONE);
+					groupPanel.setVisibility(View.VISIBLE);
+					fadePanel.setVisibility(View.GONE);
+					break;
+				case 2:
+					addrPanel.setVisibility(View.GONE);
+					groupPanel.setVisibility(View.GONE);
 					fadePanel.setVisibility(View.VISIBLE);
 					break;
 				}
@@ -351,6 +394,8 @@ public class BluetoothChat extends Activity {
 			}
 			
 		});
+		
+//		groupSpinner.setOnItemSelectedListener(spinnerSelectedListener)
 
 	}
 
@@ -365,6 +410,8 @@ public class BluetoothChat extends Activity {
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {
 			// TODO Auto-generated method stub
+			listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"01",10,-1));
+			listl.removeFirst().start();
 		}
 
 		@Override
@@ -375,6 +422,36 @@ public class BluetoothChat extends Activity {
 			msg.what = 0; // pointer rotate with the corresponding angle
 			msg.arg1 = progress;
 			panelHandler.sendMessage(msg);
+			
+			String s = convertInt2Hex((int)(progress*(100/255.0)));
+			
+			switch(seekBar.getId()){
+			case R.id.seekBar1:
+//				if(flag != PrefConfig.UPDATE_LUX_A)
+//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampA.setText("" + progress);
+				break;
+			case R.id.seekBar2:
+//				if(flag != PrefConfig.UPDATE_LUX_B)
+//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampB.setText("" + progress);
+				break;
+			case R.id.seekBar3:
+//				if(flag != PrefConfig.UPDATE_LUX_C)
+//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampC.setText("" + progress);
+				break;
+			case R.id.seekBar4:
+//				if(flag != PrefConfig.UPDATE_LUX_D)
+//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampD.setText("" + progress);
+				break;
+			}
+			
+//			if(!listl.isEmpty()){
+//				listl.removeFirst().start();
+//			}
+			
 		}
 	};
 
@@ -403,8 +480,16 @@ public class BluetoothChat extends Activity {
 				per2.setText("" + sum_angle % 100 / 10);
 				per3.setText("" + sum_angle % 100 % 10);
 
-				Log.d("DEBUG", "----------");
+				Log.d("DEBUG", "-----rotate-----");
+				
+				double powerV = (int)((sum_angle*4/100.0 * 256 / 256.0 * 3) * 10) / 10.0;
+				TextView powerTv = (TextView)layout2.findViewById(R.id.power_value);
+				powerTv.setText( powerV + "W");
 
+				break;
+			case PrefConfig.UPDATE_FACTOR:
+				ImageView factorImg = (ImageView)layout2.findViewById(R.id.is_factor_set);
+				factorImg.setBackgroundResource(R.drawable.factor_unset);
 				break;
 			}
 
@@ -465,6 +550,12 @@ public class BluetoothChat extends Activity {
 				mChatService.start();
 			}
 		}
+		
+		IntentFilter filter = new IntentFilter();
+        filter.addAction("com.tinyao.alarm");
+        alarmReceiver = new AlarmReceiver();
+        this.registerReceiver(alarmReceiver, filter);
+		
 	}
 
 	private void setupChat() {
@@ -497,6 +588,8 @@ public class BluetoothChat extends Activity {
 
 		// Initialize the buffer for outgoing messages
 		mOutStringBuffer = new StringBuffer("");
+		
+		sendStack = new Stack();
 
 	}
 
@@ -522,6 +615,11 @@ public class BluetoothChat extends Activity {
 			mChatService.stop();
 		if (D)
 			Log.e(TAG, "--- ON DESTROY ---");
+		
+//		IntentFilter filter = new IntentFilter();
+//        filter.addAction("com.tinyao.alarm");
+//
+//        this.unregisterReceiver(alarmReceiver);
 	}
 
 	private void ensureDiscoverable() {
@@ -559,11 +657,12 @@ public class BluetoothChat extends Activity {
 			byte[] send = hexStringToBytes(message);
 			// printHexString(send);
 			mChatService.write(send);
-			Log.d("DEBUG", "" + send);
+//			Log.d("DEBUG", "" + send);
 
 			// Reset out string buffer to zero and clear the edit text field
 			mOutStringBuffer.setLength(0);
-			mOutEditText.setText(mOutStringBuffer);
+//			mOutEditText.setText(mOutStringBuffer);
+			mOutEditText.setText("");
 		}
 	}
 
@@ -666,9 +765,24 @@ public class BluetoothChat extends Activity {
 				byte[] readBuf = (byte[]) msg.obj;
 				// construct a string from the valid bytes in the buffer
 				String readMessage = new String(readBuf, 0, msg.arg1);
-				mConversationArrayAdapter.add(mConnectedDeviceName + ":  "
-						+ readMessage);
-				dealMsgResponse(readMessage);
+				Log.d("DEBUG", "receive: " + readMessage);
+				Log.d("DEBUG", "receive:----"  + String.valueOf(Byte.valueOf(readBuf[0])));
+				int rec = Integer.valueOf(String.valueOf(Byte.valueOf(readBuf[0])));
+				
+				if(rec < 0){
+					rec = 256 + rec;
+				}
+				
+				if(readMessage.length() > 0){
+					mConversationArrayAdapter.add(mConnectedDeviceName + ":  "
+							+ "0x" + convertInt2Hex(rec));
+					dealMsgResponse(rec);
+				}
+				
+				//下一个任务
+				if(!listl.isEmpty())
+					listl.removeFirst().start();
+				
 				break;
 			case MESSAGE_DEVICE_NAME:
 				// save the connected device's name
@@ -802,21 +916,42 @@ public class BluetoothChat extends Activity {
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
 			switch (v.getId()) {
+			case R.id.auto_adjust:
+				autoAdjust();
+				break;
+			case R.id.refresh:
+				queryLux();
+				break;
+			case R.id.factor_set:
+				resetFactor();
+				break;
 			case R.id.leaf_name_ok_btn:	// 更新从机名称
 				int updateId = Integer.
 					valueOf(leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ID)));
 				String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+				String group = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_GROUP));
 				helper.update(updateId, 
-						leafNameEdt.getText().toString(), addr);
+						leafNameEdt.getText().toString(), addr, group);
 				fillData2LeafList();
 				break;
 			case R.id.leaf_set_btn:		// 设置从机地址
 				String address = leafAddrSpinner.getSelectedItem().toString();// 获取地址str
 				// 设置shortAddress，成功后将载数据库中更新从机（insert/update）
-				setShortAddress(address);
+				String hexAddr = Integer.toHexString(Integer.valueOf(address));
+				if(Integer.valueOf(address) < 16){
+					hexAddr = "0" + hexAddr;
+				}
+				Log.d("DEBUG", "send Addr: " + "0x" + hexAddr);
+				setShortAddress(hexAddr, address);
 				break;
 			case R.id.group_join_btn:	//设置组成员 
-				
+				String groupAddress = groupcursor.getString(
+						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ADDR));
+				SparseBooleanArray sba = groupLeafList.getCheckedItemPositions();
+				// 待处理组Id
+				String gId = groupcursor.getString(
+						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID));
+				setGroupMembers(gId, groupAddress, getLeavesAddressArray(sba));;
 				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
@@ -824,18 +959,36 @@ public class BluetoothChat extends Activity {
 			}
 		}
 
+
 	};
 
 	/* layout3 Spinner Selected Listener */
 	public AdapterView.OnItemSelectedListener spinnerSelectedListener = new OnItemSelectedListener() {
 
 		@Override
-		public void onItemSelected(AdapterView<?> arg0, View v, int arg2,
+		public void onItemSelected(AdapterView<?> arg0, View v, int position,
 				long arg3) {
 			// TODO Auto-generated method stub
-			switch (v.getId()) {
-			case R.id.leaf_addr_spinner:
+			switch (arg0.getId()) {
+			case R.id.group_spinner:
+				Log.d("DEBUG", "select--" + "");
+				groupcursor.moveToPosition(position);
+				String gName = groupcursor.getString(
+						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_NAME));
+				groupNameEdt.setText(gName);
+//				String gId = groupcursor.getString(
+//						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID));
+////				refreshLeafListWithGroup(gId);
 				
+				String leaves = groupcursor.getString(
+						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_LEAF));
+				if(!leaves.equals("")){
+					String[] leafID = leaves.split(",");
+					Log.d("DEBUG", "select--" + leaves);
+					for(String pos:leafID)
+						groupLeafList.setItemChecked(Integer.valueOf(pos), true);
+				}
+				groupCurrent = position;
 				break;
 			}
 		}
@@ -843,7 +996,7 @@ public class BluetoothChat extends Activity {
 		@Override
 		public void onNothingSelected(AdapterView<?> arg0) {
 			// TODO Auto-generated method stub
-
+			
 		}
 
 	};
@@ -855,12 +1008,28 @@ public class BluetoothChat extends Activity {
 		//从机leaf数据库
 		helper = new MyDBHelper(this);
 		helper.openDataBase(helper);
+		
+		groupHelper = new GroupDBHelper(this);
+		groupHelper.openDataBase(groupHelper);
+		
 		if(sp.getBoolean(PrefConfig.FIRST_RUN, true)){
+			String leafTotal = "";
 			for(int i=0; i<16; i++){ //初始化16个从机，地址未设置
-				helper.insert("Leaf" + i, "03");
+				helper.insert("Leaf" + i, "03", "0");
+				if(i == 0) 
+					leafTotal = "" + 0;
+				else
+					leafTotal = leafTotal + "," + i;
 			}
+//			groupHelper.insert("All", "0", leafTotal);
+			
+			for(int j=0; j<5; j++){
+				groupHelper.insert("Group" + j, "" + (96 + j), "");
+			}
+			
 			sp.edit().putBoolean(PrefConfig.FIRST_RUN, false).commit();
 		}
+		
 		fillData2LeafList();
 	}
 	
@@ -882,12 +1051,12 @@ public class BluetoothChat extends Activity {
 	 * @param cmd
 	 *            指令
 	 */
-	protected void setShortAddress(final String address) {
+	protected void setShortAddress(final String hexAddr, final String addr) {
 		// TODO Auto-generated method stub
 		new Thread() {
 			public void run() {
 				try {
-					sendMessage("A3" + address);
+					sendMessage("A3" + hexAddr);
 					sleep(200);
 					sendMessage("ff80");
 					sleep(150);
@@ -899,8 +1068,8 @@ public class BluetoothChat extends Activity {
 					// 查询是否设置成功
 					sleep(200);
 					sendMessage("ff9f");
-					flag = PrefConfig.QUERY_SHORT_ADDR_SET; // 等待响应
-					responseCheck = address;
+					flag = PrefConfig.QUERY_SHORT_ADDR_SET; // 等待响应，响应类型
+					responseCheck = addr;	// 用于检测与返回对比，判断设置是否成功，address是Hex字符串
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -908,7 +1077,145 @@ public class BluetoothChat extends Activity {
 			}
 		}.start();
 	}
+	
+	public void setGroupMembers(String groupId, String groupAddress, ArrayList<HashMap<String, Object>> array){
+		
+		for(HashMap<String, Object> map : array){
+			String address = String.valueOf(map.get("address"));//十进制
+			groupJoinLeaf = String.valueOf(map.get("leaf_name"));
+			String hexAddr = convertInt2Hex(Integer.valueOf(address));//十六进制地址
+			String groupHexAddr = convertInt2Hex(Integer.valueOf(groupAddress));
+			if(map.get("operate").equals("join")){
+				addGroupMember(groupId, groupHexAddr, hexAddr);
+			}else if(map.get("operate").equals("delete")){
+				removeGroupMember(groupId, groupHexAddr, hexAddr);
+			}
+		}
+		
+		
+	}
+	
+	
+	public void addGroupMember(final String groupId, final String groupAddress, final String hexAddr){
+		
+		Log.d("DEBUG", "----groupId----" + groupId + "---");
+		
+		new Thread() {
+			public void run() {
+				try {
+					sendMessage(hexAddr + groupAddress);
+					sleep(200);
+					sendMessage(hexAddr + groupAddress);
+					sleep(200);
+					sendMessage("ff82");
+					sleep(150);
+					sendMessage("ff82");
+					
+					if(Integer.valueOf(groupId) <= 8){
+						// 查询是否设置成功, //是否载0～7内
+						sleep(200);
+						sendMessage(hexAddr + "c0"); 
+						flag = PrefConfig.QUERY_LEAF_GROUP_1; // 等待响应，响应类型
+						toGroupId = Integer.valueOf(groupId) - 1;
+					}else{
+						// 查询是否设置成功, //是否载8～f内
+						sleep(200);
+						sendMessage(hexAddr + "c1"); 
+						flag = PrefConfig.QUERY_LEAF_GROUP_2; // 等待响应，响应类型
+						toGroupId = Integer.valueOf(groupId) - 1;
+					}
+					
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}.start();
+		
+	}
+	
+	public void removeGroupMember(final String groupId, String groupAddress, String hexAddr){
+		
+	}
+	
+	public ArrayList<HashMap<String, Object>> getLeavesAddressArray(SparseBooleanArray array){
+		
+		ArrayList<HashMap<String, Object>> addrList = new ArrayList<HashMap<String, Object>>();
+		
+		HashMap<String, Object> map; 
+		
+		Log.d("DEBUG", "groupCurrent---" + groupCurrent);
+		groupcursor.moveToPosition(groupCurrent);
+		String leaves = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_LEAF));
+		Log.d("DEBUG", "leaves---" + leaves);
+		
+		if(!leaves.equals("")){
+			String[] leafArray = leaves.split(",");
+			
+			//用于从组中删除从机
+			for(String leafId:leafArray){
+				if(!array.get(Integer.valueOf(leafId))){
+					//原先在组内，现在不在组内的
+					map = new HashMap<String, Object>();
+					leafcursor.moveToPosition(Integer.valueOf(leafId));
+					String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+					String leafName = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
+					map.put("position", Integer.valueOf(leafId));
+					map.put("address", addr);
+					map.put("leaf_name", leafName);
+					map.put("operate", "delete");
+					addrList.add(map);
+				}
+			}
+		}
+		
+		//添加到组内的从机
+		for(int j=0; j<array.size(); j++){
+			if(array.get(j)){
+				map = new HashMap<String, Object>();
+				leafcursor.moveToPosition(j);
+				String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+				String leafName = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
+				map.put("position", Integer.valueOf(j));
+				map.put("address", addr);
+				map.put("leaf_name", leafName);
+				map.put("operate", "join");
+				addrList.add(map);
+			}
+		}
+		
+		
+		for(HashMap<String, Object> mapUnit : addrList){
+			Log.d("DEBUG", "-----" + mapUnit);
+		}
+		
+		return addrList;
+	}
 
+	
+	public void autoAdjust() {
+		// TODO Auto-generated method stub
+		
+		listl.addLast(new SendMsgTread(this, "03"+"EF", 200, -1));
+		listl.addLast(new SendMsgTread(this, "03"+"EE", 200, -1));
+		startQueryLux();
+		listl.removeFirst().start();
+		
+	}
+
+	
+	public void startQueryLux() {
+		// TODO Auto-generated method stub
+		AlarmManager alarms = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+		int alarmType = AlarmManager.ELAPSED_REALTIME_WAKEUP;
+		
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, 
+				new Intent("com.tinyao.alarm"), 0);
+		alarms.setRepeating(alarmType, 2000, 3000, pendingIntent);
+		
+		sp.edit().putInt("alarm_times", 30).commit();//闹钟五次
+	}
+	
 	/**
 	 * 
 	 */
@@ -916,8 +1223,8 @@ public class BluetoothChat extends Activity {
 		// TODO Auto-generated method stub
 		String leafName = leafNameEdt.getText().toString();
 		String leafAddr = leafAddrSpinner.getSelectedItem().toString();
-
-		helper.insert(leafName, leafAddr);
+		String leafGroup = leafAddrSpinner.getSelectedItem().toString();
+		helper.insert(leafName, leafAddr, leafGroup);
 	}
 
 	public void fillData2LeafList() {
@@ -927,12 +1234,28 @@ public class BluetoothChat extends Activity {
 				new String[] { MyDBHelper.LEAF_NAME, MyDBHelper.LEAF_ADDR},
 				new int[] { android.R.id.text1, android.R.id.text2 });
 		leafList.setAdapter(adapter);
+		
+		SimpleCursorAdapter groupLeafAdapter = new SimpleCursorAdapter(this,
+				android.R.layout.simple_list_item_multiple_choice, leafcursor,
+				new String[] { MyDBHelper.LEAF_NAME, MyDBHelper.LEAF_ADDR},
+				new int[] { android.R.id.text1, android.R.id.text2 });
+		groupLeafList.setAdapter(groupLeafAdapter);
+		groupLeafList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		
+		groupcursor = groupHelper.select();
+		SimpleCursorAdapter existGroupAdapter = new SimpleCursorAdapter(this,
+				android.R.layout.simple_dropdown_item_1line, groupcursor,
+				new String[] { GroupDBHelper.GROUP_NAME},
+				new int[] { android.R.id.text1});
+		groupSpinner.setAdapter(existGroupAdapter);
 	}
 	
-	public void fillData2LeafSpinner(){
+	public void refreshLeafListWithGroup(String groupId){
+		
+		
 		
 	}
-
+	
 	/**
 	 * 
 	 * @param leafAddr
@@ -942,24 +1265,92 @@ public class BluetoothChat extends Activity {
 
 	}
 	
-	protected void dealMsgResponse(String readMessage) {
+	protected void dealMsgResponse(int res) {
 		// TODO Auto-generated method stub
-		LogInfo.append("\n> " + "receive str: " + readMessage);
+		Log.d("FLAG", "DEAL MSG flag -----" + flag);
 		switch (flag) {
 		case -1:
 			break;
 		case PrefConfig.QUERY_SHORT_ADDR_SET: // 设置从机短地址
-			if (readMessage.contains(responseCheck)) {
+			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
+			if (res == Integer.valueOf(responseCheck)) {
 				LogInfo.append("\n> " + getResources().getString(R.string.short_address_set_ok));
-				// 将新设置的从机添加到sharedpref中
-
+				leafcursor.moveToPosition(leafCurrent);
+				int id = Integer.valueOf(
+						leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ID)));
+				String lname = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
+				String group = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_GROUP));
+				helper.update(id, lname, responseCheck, group);
 			} else {
 				LogInfo.append("\n> " + getResources().getString( R.string.short_address_set_fail));
 				// Toast.makeText(this,
 				// getResources().getString(R.string.short_address_set_fail),
 				// Toast.LENGTH_SHORT).show();
 			}
-			saveLeafAfterSet();
+			break;
+		case PrefConfig.QUERY_LEAF_GROUP_1:
+			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
+			String binRes1 = Integer.toBinaryString(res);
+			if(toGroupId < 8){
+				char is = 0;
+				if(binRes1.length() >= toGroupId)
+					is = binRes1.charAt(toGroupId);
+				Log.d("DEBUG", "binary is: " + is);
+				if(is == '1'){
+					Log.d("DEBUG", "nsuccess: add " + groupJoinLeaf + " to group " + toGroupId);
+					LogInfo.append("\nsuccess: " + "add " + groupJoinLeaf + " to group " + toGroupId);
+				}else{
+					Log.d("DEBUG", "fail: add " + groupJoinLeaf + " to group " + toGroupId);
+					LogInfo.append("\nfail: " + "add " + groupJoinLeaf + " to group " + toGroupId);
+				}
+			}
+			break;
+		case PrefConfig.QUERY_LEAF_GROUP_2:
+			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
+			String binRes2 = Integer.toBinaryString(res);
+			if(toGroupId > 8){
+				char is = binRes2.charAt(toGroupId - 7);
+				if(is == 1){
+					Log.d("DEBUG", "nsuccess: add " + groupJoinLeaf + " to group " + toGroupId);
+					LogInfo.append("\nsuccess: " + "add " + groupJoinLeaf + " to group " + toGroupId);
+				}else{
+					Log.d("DEBUG", "fail: add " + groupJoinLeaf + " to group " + toGroupId);
+					LogInfo.append("\nfail: " + "add " + groupJoinLeaf + " to group " + toGroupId);
+				}
+			}
+			break;
+		case PrefConfig.QUERY_LAMP_LUX_A:
+			Log.d("lamp-----------", "" + res);
+			//这里把光照值做处理映射到0～100
+			int lux1 =(int) (res/255.0 * 100);
+			
+			lampA.setText("" + lux1);
+			seek1.setProgress(lux1);
+			break;
+		case PrefConfig.QUERY_LAMP_LUX_B:
+			Log.d("lamp-----------", "" + res);
+			//这里把光照值做处理映射到0～100
+			int lux2 =(int) (res/255.0 * 100);
+			lampB.setText("" + lux2);
+			seek2.setProgress(lux2);
+			break;
+		case PrefConfig.QUERY_LAMP_LUX_C:
+			Log.d("lamp-----------", "" + res);
+			//这里把光照值做处理映射到0～100
+			int lux3 =(int) (res/255.0 * 100);
+			lampC.setText("" + lux3);
+			seek3.setProgress(lux3);
+			break;
+		case PrefConfig.QUERY_LAMP_LUX_D:
+			Log.d("lamp-----------", "" + res);
+			//这里把光照值做处理映射到0～100
+			int lux4 =(int) (res/255.0 * 100);
+			lampD.setText("" + lux4);
+			seek4.setProgress(lux4);
+			
+			Message msg = panelHandler.obtainMessage();
+			msg.what = 0; // pointer rotate with the corresponding angle
+			panelHandler.sendMessage(msg);
 			break;
 		}
 
@@ -970,4 +1361,103 @@ public class BluetoothChat extends Activity {
 		});
 	}
 
+	private String convertInt2Hex(int num) {
+		// TODO Auto-generated method stub
+		String result = Integer.toHexString(num);
+		if(num<16){
+			result = "0" + result;
+		}
+		return result;
+	}
+
+	public class AlarmReceiver extends BroadcastReceiver{
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			// TODO Auto-generated method stub
+			
+			Log.d("DEBUG", "-----query-----");
+			if(mChatService.getState() == BluetoothChatService.STATE_CONNECTED){
+				
+				queryLux();
+				
+				int cur = sp.getInt("alarm_times", 0);
+				Log.d("DEBUG", "--cur--" + cur);
+				
+				if(cur == 0){
+					//BluetoothChat.this.unregisterReceiver(alarmReceiver);
+					AlarmManager alarms = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+					int alarmType = AlarmManager.ELAPSED_REALTIME_WAKEUP;
+					
+					PendingIntent pendingIntent = PendingIntent.getBroadcast(BluetoothChat.this, 0, 
+							new Intent("com.tinyao.alarm"), 0);
+					alarms.cancel(pendingIntent);
+				}else{
+					sp.edit().putInt("alarm_times", cur-1).commit();
+				}
+				
+			}
+			
+		}
+
+	}
+
+	public void queryLux(){
+		
+		Log.d("DEBUG", "query lux -----------");
+		
+		listl.clear();
+		
+		listl.addLast(new SendMsgTread(this, "03" + "FA", 200, PrefConfig.QUERY_LAMP_LUX_A));
+		listl.addLast(new SendMsgTread(this, "03" + "FB", 200, PrefConfig.QUERY_LAMP_LUX_B));
+		listl.addLast(new SendMsgTread(this, "03" + "FC", 200, PrefConfig.QUERY_LAMP_LUX_C));
+		listl.addLast(new SendMsgTread(this, "03" + "FD", 200, PrefConfig.QUERY_LAMP_LUX_D));
+		
+		listl.removeFirst().start();
+		
+	}
+	
+	/**
+	 * 重置影响因子
+	 */
+	public void resetFactor(){
+		listl.addLast(new SendMsgTread(this, "03" + "EF", 200, PrefConfig.UPDATE_FACTOR));
+		if(!listl.isEmpty())
+			listl.removeFirst().start();
+		Message msg = panelHandler.obtainMessage();
+		msg.what = PrefConfig.UPDATE_FACTOR;
+		panelHandler.sendMessage(msg);
+	}
+
+	LinkedList<SendMsgTread> listl = new LinkedList<SendMsgTread>();
+	
+	public class SendMsgTread extends Thread{
+		
+		private String msg;
+		private int sleepTime;
+		private int type;
+		
+		public SendMsgTread(Context con, String sendMsg, int sleeptime, int type){
+			msg = sendMsg;
+			sleepTime = sleeptime;
+			this.type = type;
+		}
+		
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			sendMessage(msg);
+			try {
+				flag = type;
+				sleep(sleepTime);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			super.run();
+		}
+		
+	}
+	
 }
+

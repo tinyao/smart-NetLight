@@ -15,6 +15,7 @@ public class MyDBHelper extends SQLiteOpenHelper {
     public final static String LEAF_ID = "_id";
     public final static String LEAF_NAME = "name";
     public final static String LEAF_ADDR = "address";
+    public final static String LEAF_GROUP = "lgroup";
     
     Context context;
     
@@ -29,10 +30,19 @@ public class MyDBHelper extends SQLiteOpenHelper {
     // 创建table
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String sql = "CREATE TABLE " + TABLE_NAME + " (" + LEAF_ID
-                + " INTEGER primary key autoincrement, " + LEAF_NAME
-                + " text, " + LEAF_ADDR + " text);";
-        db.execSQL(sql);
+//        String sql = "CREATE TABLE " + TABLE_NAME + " (" + LEAF_ID
+//                + " INTEGER primary key autoincrement, " 
+//        		+ LEAF_NAME + " text, " 
+//        		+ LEAF_GROUP + " text, "
+//        		+ LEAF_ADDR + " text);";
+//        db.execSQL(sql);
+    	 db.execSQL("DROP TABLE IF EXISTS person");  
+         //创建person表  
+         db.execSQL("CREATE TABLE leaf_addr " +
+         		"(_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+         		"name VARCHAR, " +
+         		"address VARCHAR, " +
+         		"lgroup VARCHAR)");  
     }
     
     
@@ -54,11 +64,12 @@ public class MyDBHelper extends SQLiteOpenHelper {
     }
  
     // 增加操作
-    public long insert(String leafName, String leafAddr) {
+    public long insert(String leafName, String leafAddr, String leafGroup) {
         /* ContentValues */
         ContentValues cv = new ContentValues();
         cv.put(LEAF_NAME, leafName);
         cv.put(LEAF_ADDR, leafAddr);
+        cv.put(LEAF_GROUP, leafGroup);
         long row = leafBD.insert(TABLE_NAME, null, cv);
         return row;
     }
@@ -71,13 +82,14 @@ public class MyDBHelper extends SQLiteOpenHelper {
     }
  
     // 修改操作
-    public void update(int id, String leafName, String leafAddr) {
+    public void update(int id, String leafName, String leafAddr, String leafGroup) {
         String where = LEAF_ID + " = ?";
         String[] whereValue = { Integer.toString(id) };
  
         ContentValues cv = new ContentValues();
         cv.put(LEAF_NAME, leafName);
         cv.put(LEAF_ADDR, leafAddr);
+        cv.put(LEAF_GROUP, leafGroup);
         leafBD.update(TABLE_NAME, cv, where, whereValue);
     }
 }

@@ -1,45 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/short_and_group_panel"
+    android:id="@+id/group_set_panel"
     android:layout_width="match_parent"
     android:layout_height="250dip"
     android:layout_marginTop="30dip"
     android:background="#00000000"
-    android:visibility="gone"
-    android:orientation="horizontal">
-    
-    <ListView 
+    android:orientation="horizontal" >
+
+    <ListView
         android:id="@+id/group_leaf_list"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_weight="1"/>
-    
-    <LinearLayout 
+        android:layout_weight="1"
+        android:cacheColorHint="#00000000" />
+
+    <LinearLayout
         android:id="@+id/group_opeation"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_weight="1"
-        android:orientation="vertical">
-        
-        <Spinner 
+        android:orientation="vertical" >
+
+        <ScrollView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <TextView
+                android:id="@+id/select_leaf_num"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:gravity="center"
+                android:text="已选中 0 个从机" />
+        </ScrollView>
+
+        <Spinner
             android:id="@+id/group_spinner"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:entries="@array/short_addr_array"/>
-        
-        <EditText 
+            android:layout_marginTop="10dip"
+            android:prompt="@string/group_exist" />
+
+        <EditText
             android:id="@+id/group_name_edt"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dip"
             android:hint="@string/group_edt_name_hint"
-            android:singleLine="true"/>
-        
-        <Button android:id="@+id/group_join_btn"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/group_join_btn"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_marginTop="10dip"
-            android:text="@string/group_leaf_join_txt"/>
+            android:text="@string/group_leaf_join_txt" />
     </LinearLayout>
 
 </LinearLayout>
