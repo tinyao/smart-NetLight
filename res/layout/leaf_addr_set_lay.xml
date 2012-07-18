@@ -3,7 +3,7 @@
     android:id="@+id/short_addr_panel"
     android:layout_width="match_parent"
     android:layout_height="250dip"
-    android:layout_marginTop="30dip"
+    android:layout_marginTop="20dip"
     android:background="#00000000"
     android:orientation="horizontal">
     
@@ -20,6 +20,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_weight="1"
+        android:layout_marginLeft="5dip"
         android:orientation="vertical">
         
         <EditText 
@@ -27,25 +28,32 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="@string/leaf_edt_name_hint"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
             android:singleLine="true"/>
 
         <Button
             android:id="@+id/leaf_name_ok_btn"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
             android:text="@string/leaf_name_btn_txt" />
 
         <Spinner
             android:id="@+id/leaf_addr_spinner"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dip"
+            android:layout_marginTop="10dip"
             android:entries="@array/short_addr_array" />
         
         <Button
             android:id="@+id/leaf_set_btn"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:layout_marginTop="6dip"
             android:text="@string/leaf_set_btn_txt" />
 
     </LinearLayout>

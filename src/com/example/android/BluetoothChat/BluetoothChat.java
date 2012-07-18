@@ -24,11 +24,13 @@ import java.util.Stack;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -63,6 +65,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -127,10 +130,12 @@ public class BluetoothChat extends Activity {
 	private View pointer; // dashboard poioter
 	private Animation am; // pointer rotate animation
 	private TextView per1, per2, per3; // dashboard power percent
+	private TextView sensorVal;
 	private View panel_1, panel_2, panel_3;
-	private ToggleButton tab_1;
+	private ToggleButton tab_1, tab_2;
 
 	private Button adjustBtn, factorBtn;
+	private Button targetLuxBtn, fetchFactorBtn;
 	private TextView lampA, lampB, lampC, lampD;
 	private ImageView refreshBtn;
 	
@@ -149,13 +154,15 @@ public class BluetoothChat extends Activity {
 	private Button fadeTimeBtn, fadeRateBtn;
 	
 	private TextView LogInfo;
-	private Button clearLogBtn;
+	private ImageButton clearLogBtn;
 	private ScrollView logScroll;
 	private Cursor leafcursor, groupcursor;
 
 	private int flag = -1; // wait for the respond
 	private String responseCheck;
 	private int toGroupId;
+	private boolean isInSeekPanel = false;
+	private String fadeTime="00", fadeRate="01";
 
 	// Name of the connected device
 	private String mConnectedDeviceName = null;
@@ -176,6 +183,7 @@ public class BluetoothChat extends Activity {
 	private int groupCurrent = -1;
 	private String groupJoinLeaf = "";
 	private boolean queryLuxA, queryLuxB, queryLuxC, queryLuxD;
+	private String targetHexLux = "";
 	
 	private AlarmReceiver alarmReceiver;
 	private Stack sendStack;
@@ -266,6 +274,8 @@ public class BluetoothChat extends Activity {
 		per1 = (TextView) layout2.findViewById(R.id.percent_1);
 		per2 = (TextView) layout2.findViewById(R.id.percent_2);
 		per3 = (TextView) layout2.findViewById(R.id.percent_3);
+		
+		sensorVal = (TextView) layout2.findViewById(R.id.sensorVal);
 
 		seek1.setOnSeekBarChangeListener(listener);
 		seek2.setOnSeekBarChangeListener(listener);
@@ -274,6 +284,8 @@ public class BluetoothChat extends Activity {
 		
 		adjustBtn = (Button)layout2.findViewById(R.id.auto_adjust);
 		factorBtn = (Button)layout2.findViewById(R.id.factor_set);
+		targetLuxBtn = (Button) layout2.findViewById(R.id.targetLux);
+		fetchFactorBtn = (Button) layout2.findViewById(R.id.fetch_factor);
 		lampA = (TextView)layout2.findViewById(R.id.lamp_a_lux);
 		lampB = (TextView)layout2.findViewById(R.id.lamp_b_lux);
 		lampC = (TextView)layout2.findViewById(R.id.lamp_c_lux);
@@ -283,29 +295,62 @@ public class BluetoothChat extends Activity {
 		
 		adjustBtn.setOnClickListener(lay3btnListener);
 		factorBtn.setOnClickListener(lay3btnListener);
+		targetLuxBtn.setOnClickListener(lay3btnListener);
+		fetchFactorBtn.setOnClickListener(lay3btnListener);
 		refreshBtn.setOnClickListener(lay3btnListener);
 		
 		tab_1 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_1);
+		tab_2 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_2);
 
 		panel_1 = (View) layout2.findViewById(R.id.panel_1);
 		panel_2 = (View) layout2.findViewById(R.id.panel_2);
 		panel_3 = (View) layout2.findViewById(R.id.panel_3);
 
-		tab_1.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+		tab_1.setOnClickListener(new OnClickListener(){
 
 			@Override
-			public void onCheckedChanged(CompoundButton buttonView,
-					boolean isChecked) {
+			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				if (!tab_1.isChecked()) {
-					panel_1.setVisibility(View.VISIBLE);
-					panel_2.setVisibility(View.GONE);
-				} else {
-					panel_1.setVisibility(View.GONE);
-					panel_2.setVisibility(View.VISIBLE);
+				tab_1.setChecked(true);
+				tab_2.setChecked(false);
+				panel_1.setVisibility(View.GONE);
+				panel_2.setVisibility(View.VISIBLE);
+				
+				// 离开单独调光面板，将fade恢复到此前的值
+				isInSeekPanel = false;
+				listl.clear();
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeTime, 0, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 200, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 400, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeRate, 600, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 800, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 1000, PrefConfig.SET_FADE_RATE));
+				while(!listl.isEmpty()){
+					listl.removeFirst().start();
 				}
+				Log.d("DEBUG", "recover the fadetime and faderate");
 			}
+			
+		});
+		
+		tab_2.setOnClickListener(new OnClickListener(){
 
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				tab_1.setChecked(false);
+				tab_2.setChecked(true);
+				panel_1.setVisibility(View.VISIBLE);
+				panel_2.setVisibility(View.GONE);
+				
+				isInSeekPanel = true; //
+				
+				listl.clear();
+				// 查询当前的fade值，在收到回复后，继续执行任务，将fadeTime和fadeRate值设为0，1
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "a5", 0, PrefConfig.QUERY_FADE));
+				listl.removeFirst().start();
+			}
+			
 		});
 
 		// layout3
@@ -332,7 +377,7 @@ public class BluetoothChat extends Activity {
 		fadeRateBtn = (Button) layout3.findViewById(R.id.fade_rate_btn);
 
 		LogInfo = (TextView) layout3.findViewById(R.id.loginfo);
-		clearLogBtn = (Button) layout3.findViewById(R.id.clear_log);
+		clearLogBtn = (ImageButton) layout3.findViewById(R.id.clear_log);
 		logScroll = (ScrollView) layout3.findViewById(R.id.log_info_scroll);
 
 		initDatabase();
@@ -410,7 +455,25 @@ public class BluetoothChat extends Activity {
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {
 			// TODO Auto-generated method stub
-			listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"01",10,-1));
+			flag = -1;
+			
+			listl.clear();//设置光照前，清空此前残留任务
+			
+			switch(seekBar.getId()){
+			case R.id.seekBar1:
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"01",10,-1));
+				break;
+			case R.id.seekBar2:
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"02",10,-1));
+				break;
+			case R.id.seekBar3:
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"03",10,-1));
+				break;
+			case R.id.seekBar4:
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"a3"+"04 ",10,-1));
+				break;
+			}
+			
 			listl.removeFirst().start();
 		}
 
@@ -418,39 +481,54 @@ public class BluetoothChat extends Activity {
 		public void onProgressChanged(SeekBar seekBar, int progress,
 				boolean fromUser) {
 			// TODO Auto-generated method stub
-			Message msg = panelHandler.obtainMessage();
-			msg.what = 0; // pointer rotate with the corresponding angle
-			msg.arg1 = progress;
-			panelHandler.sendMessage(msg);
 			
-			String s = convertInt2Hex((int)(progress*(100/255.0)));
+			//发送调光
+			String s = convertInt2Hex((int)(progress*(255/100.0)));
+			Log.d("FALG", "flag:  " + flag);
+			
+			if(flag != -1){
+				return;
+			}
 			
 			switch(seekBar.getId()){
 			case R.id.seekBar1:
-//				if(flag != PrefConfig.UPDATE_LUX_A)
-//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
-				lampA.setText("" + progress);
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampA.setText("" + progress + "%");
 				break;
 			case R.id.seekBar2:
-//				if(flag != PrefConfig.UPDATE_LUX_B)
-//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
-				lampB.setText("" + progress);
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampB.setText("" + progress + "%");
 				break;
 			case R.id.seekBar3:
-//				if(flag != PrefConfig.UPDATE_LUX_C)
-//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
-				lampC.setText("" + progress);
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampC.setText("" + progress + "%");
 				break;
 			case R.id.seekBar4:
-//				if(flag != PrefConfig.UPDATE_LUX_D)
-//					listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
-				lampD.setText("" + progress);
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				lampD.setText("" + progress + "%");
 				break;
 			}
 			
-//			if(!listl.isEmpty()){
-//				listl.removeFirst().start();
-//			}
+			new Thread(){
+				public void run(){
+					try {
+						sleep(200);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					if(!listl.isEmpty()){
+						// single adjust
+						Log.d("DEBUG", "----------adjust--------");
+						listl.removeFirst().start();
+					}
+				}
+			}.start();
+			
+			Message msg = panelHandler.obtainMessage();
+			msg.what = 0; // pointer rotate with the corresponding angle
+			msg.arg1 = progress;
+			panelHandler.sendMessage(msg);	//动画效果
 			
 		}
 	};
@@ -485,7 +563,9 @@ public class BluetoothChat extends Activity {
 				double powerV = (int)((sum_angle*4/100.0 * 256 / 256.0 * 3) * 10) / 10.0;
 				TextView powerTv = (TextView)layout2.findViewById(R.id.power_value);
 				powerTv.setText( powerV + "W");
-
+				
+//				listl.clear();
+				
 				break;
 			case PrefConfig.UPDATE_FACTOR:
 				ImageView factorImg = (ImageView)layout2.findViewById(R.id.is_factor_set);
@@ -579,6 +659,7 @@ public class BluetoothChat extends Activity {
 				TextView view = (TextView) layout1
 						.findViewById(R.id.edit_text_out);
 				String message = view.getText().toString();
+				view.setText("");
 				sendMessage(message);
 			}
 		});
@@ -662,7 +743,7 @@ public class BluetoothChat extends Activity {
 			// Reset out string buffer to zero and clear the edit text field
 			mOutStringBuffer.setLength(0);
 //			mOutEditText.setText(mOutStringBuffer);
-			mOutEditText.setText("");
+//			mOutEditText.setText("");
 		}
 	}
 
@@ -776,6 +857,7 @@ public class BluetoothChat extends Activity {
 				if(readMessage.length() > 0){
 					mConversationArrayAdapter.add(mConnectedDeviceName + ":  "
 							+ "0x" + convertInt2Hex(rec));
+					LogInfo.append("\n" + "receive str: " + "0x" + convertInt2Hex(rec));
 					dealMsgResponse(rec);
 				}
 				
@@ -952,6 +1034,12 @@ public class BluetoothChat extends Activity {
 				String gId = groupcursor.getString(
 						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID));
 				setGroupMembers(gId, groupAddress, getLeavesAddressArray(sba));;
+				break;
+			case R.id.targetLux:
+				setTargetLux();
+				break;
+			case R.id.fetch_factor:
+				fetchExistFactor();
 				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
@@ -1268,6 +1356,7 @@ public class BluetoothChat extends Activity {
 	protected void dealMsgResponse(int res) {
 		// TODO Auto-generated method stub
 		Log.d("FLAG", "DEAL MSG flag -----" + flag);
+		
 		switch (flag) {
 		case -1:
 			break;
@@ -1289,7 +1378,7 @@ public class BluetoothChat extends Activity {
 			}
 			break;
 		case PrefConfig.QUERY_LEAF_GROUP_1:
-			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
+//			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
 			String binRes1 = Integer.toBinaryString(res);
 			if(toGroupId < 8){
 				char is = 0;
@@ -1306,7 +1395,7 @@ public class BluetoothChat extends Activity {
 			}
 			break;
 		case PrefConfig.QUERY_LEAF_GROUP_2:
-			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
+//			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
 			String binRes2 = Integer.toBinaryString(res);
 			if(toGroupId > 8){
 				char is = binRes2.charAt(toGroupId - 7);
@@ -1324,33 +1413,92 @@ public class BluetoothChat extends Activity {
 			//这里把光照值做处理映射到0～100
 			int lux1 =(int) (res/255.0 * 100);
 			
-			lampA.setText("" + lux1);
+			lampA.setText("" + lux1 + "%");
 			seek1.setProgress(lux1);
 			break;
 		case PrefConfig.QUERY_LAMP_LUX_B:
 			Log.d("lamp-----------", "" + res);
 			//这里把光照值做处理映射到0～100
 			int lux2 =(int) (res/255.0 * 100);
-			lampB.setText("" + lux2);
+			lampB.setText("" + lux2 + "%");
 			seek2.setProgress(lux2);
 			break;
 		case PrefConfig.QUERY_LAMP_LUX_C:
 			Log.d("lamp-----------", "" + res);
 			//这里把光照值做处理映射到0～100
 			int lux3 =(int) (res/255.0 * 100);
-			lampC.setText("" + lux3);
+			lampC.setText("" + lux3 + "%");
 			seek3.setProgress(lux3);
 			break;
 		case PrefConfig.QUERY_LAMP_LUX_D:
 			Log.d("lamp-----------", "" + res);
 			//这里把光照值做处理映射到0～100
 			int lux4 =(int) (res/255.0 * 100);
-			lampD.setText("" + lux4);
+			lampD.setText("" + lux4 + "%");
 			seek4.setProgress(lux4);
 			
 			Message msg = panelHandler.obtainMessage();
 			msg.what = 0; // pointer rotate with the corresponding angle
 			panelHandler.sendMessage(msg);
+			break;
+		case PrefConfig.QUERY_FADE:
+			Log.d("DEBUG", "query_fade");
+			if(isInSeekPanel){
+				listl.clear();
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + "00", 0, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 200, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 400, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 600, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 800, PrefConfig.SET_FADE_RATE));
+				while(!listl.isEmpty()){
+					listl.removeFirst().start();
+				}
+				String fadeVal = Integer.toBinaryString(res);
+				Log.d("DEBUG", "query_fade" + fadeVal);
+				String fadeT = "0",fadeR = "1";
+				if(fadeVal.length() > 4){
+					fadeT = fadeVal.substring(0, fadeVal.length()-4);
+					fadeR = fadeVal.substring(fadeVal.length()-4, fadeVal.length());
+				}else{
+					fadeR = fadeVal.substring(0, fadeVal.length());
+				}
+				Log.d("DEBUG", "fadeT: " + fadeT + " fadeR: " + fadeR);
+				fadeTime = convertBinaryStr2HexStr(fadeT);//记录当前fade值
+				fadeRate = convertBinaryStr2HexStr(fadeR);
+				Log.d("DEBUG", "fadeTime: " + fadeTime + " fadeRate: " + fadeRate);
+			}
+			break;
+		case PrefConfig.QUERY_TARGET_LUX:
+			Log.d("DEBUG", "========== query target lux ==========" + res);
+			if(convertInt2Hex(res).equals(targetHexLux)){
+				Toast.makeText(this, "理想照度值" + (res*4) + "设置成功！", Toast.LENGTH_SHORT).show();
+			}else{
+				Toast.makeText(this, "理想照度值" + (res*4) + "设置失败，请重试！", Toast.LENGTH_SHORT).show();
+			}
+			targetHexLux = "";
+			break;
+		case PrefConfig.QUERY_FACTOR_A:
+			Log.d("DEBUG", "========== query factor A ==========" + res);
+			sp.edit().putFloat("factor_a", (float)(res*4/200.0)).commit();
+			break;
+		case PrefConfig.QUERY_FACTOR_B:
+			Log.d("DEBUG", "========== query factor B ==========" + res);
+			sp.edit().putFloat("factor_b", (float)(res*4/200.0)).commit();
+			break;
+		case PrefConfig.QUERY_FACTOR_C:
+			Log.d("DEBUG", "========== query factor C ==========" + res);
+			sp.edit().putFloat("factor_c", (float)(res*4/200.0)).commit();
+			break;
+		case PrefConfig.QUERY_FACTOR_D:
+			Log.d("DEBUG", "========== query factor D ==========" + res);
+			sp.edit().putFloat("factor_d", (float)(res*4/200.0)).commit();
+			
+			Toast.makeText(this, 
+					"影响因子\nA灯：" + sp.getFloat("factor_a", 1) + 
+					"\t\tB灯：" + sp.getFloat("factor_b", 1) +
+					"\nC灯：" + sp.getFloat("factor_c", 1) +
+					"\t\tD灯:" + sp.getFloat("factor_d", 1), 
+					Toast.LENGTH_LONG).show();
 			break;
 		}
 
@@ -1359,6 +1507,8 @@ public class BluetoothChat extends Activity {
 				logScroll.fullScroll(ScrollView.FOCUS_DOWN);
 			}
 		});
+		
+		
 	}
 
 	private String convertInt2Hex(int num) {
@@ -1368,6 +1518,16 @@ public class BluetoothChat extends Activity {
 			result = "0" + result;
 		}
 		return result;
+	}
+	
+	private String convertBinaryStr2HexStr(String binStr){
+		int intVal = 0;
+		char[] binC = binStr.toCharArray();
+		for(int i=0; i<binC.length; i++){
+			if(binC[i] == '1')
+				intVal =intVal +  (int) Math.pow(2, binC.length-1-i) * 1;
+		}
+		return convertInt2Hex(intVal);
 	}
 
 	public class AlarmReceiver extends BroadcastReceiver{
@@ -1402,19 +1562,80 @@ public class BluetoothChat extends Activity {
 
 	}
 
+	/**
+	 * 查询灯照度
+	 */
 	public void queryLux(){
 		
 		Log.d("DEBUG", "query lux -----------");
 		
-		listl.clear();
+		listl.clear();//清空此前的任务队列
 		
-		listl.addLast(new SendMsgTread(this, "03" + "FA", 200, PrefConfig.QUERY_LAMP_LUX_A));
-		listl.addLast(new SendMsgTread(this, "03" + "FB", 200, PrefConfig.QUERY_LAMP_LUX_B));
-		listl.addLast(new SendMsgTread(this, "03" + "FC", 200, PrefConfig.QUERY_LAMP_LUX_C));
-		listl.addLast(new SendMsgTread(this, "03" + "FD", 200, PrefConfig.QUERY_LAMP_LUX_D));
+		listl.addLast(new SendMsgTread(this, "03" + "FA", 0, PrefConfig.QUERY_LAMP_LUX_A));
+		listl.addLast(new SendMsgTread(this, "03" + "FB", 0, PrefConfig.QUERY_LAMP_LUX_B));
+		listl.addLast(new SendMsgTread(this, "03" + "FC", 0, PrefConfig.QUERY_LAMP_LUX_C));
+		listl.addLast(new SendMsgTread(this, "03" + "FD", 0, PrefConfig.QUERY_LAMP_LUX_D));
 		
 		listl.removeFirst().start();
 		
+	}
+	
+	/**
+	 * 设置理想照度
+	 */
+	public void setTargetLux(){
+		
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("感应器目标照度");
+		LayoutInflater mInflater = getLayoutInflater();
+		View tartgetView = mInflater.inflate(R.layout.target_edt, null);
+		builder.setView(tartgetView);
+		final EditText targetEdt = (EditText) tartgetView.findViewById(R.id.target_edit);
+		builder.setPositiveButton("确定", new DialogInterface.OnClickListener(){
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				int tint = Integer.valueOf(targetEdt.getText().toString());
+				if(tint<1024 && tint>=0){
+					String tstr = convertInt2Hex(tint/4);
+					targetHexLux = tstr;
+					listl.clear();
+					// 设置理想照度
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "c3" + tstr, 0, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "F2", 200, -1));
+					
+					// 查询理想照度 用于判断是否设置成功
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "FE", 400, PrefConfig.QUERY_TARGET_LUX));
+					while(!listl.isEmpty()){
+						listl.removeFirst().start();
+					}
+				}else{
+					Toast.makeText(BluetoothChat.this, "输入格式错误", Toast.LENGTH_SHORT).show();
+				}
+			}
+			
+		});
+		builder.setNegativeButton("取消", new DialogInterface.OnClickListener(){
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		builder.create().show();
+		
+	}
+	
+	public void fetchExistFactor(){
+		listl.clear();
+		listl.addLast(new SendMsgTread(this, "03" + "E1", 0, PrefConfig.QUERY_FACTOR_A));
+		listl.addLast(new SendMsgTread(this, "03" + "E2", 0, PrefConfig.QUERY_FACTOR_B));
+		listl.addLast(new SendMsgTread(this, "03" + "E3", 0, PrefConfig.QUERY_FACTOR_C));
+		listl.addLast(new SendMsgTread(this, "03" + "E4", 0, PrefConfig.QUERY_FACTOR_D));
+		listl.removeFirst().start();
 	}
 	
 	/**
@@ -1446,10 +1667,10 @@ public class BluetoothChat extends Activity {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			sendMessage(msg);
 			try {
-				flag = type;
 				sleep(sleepTime);
+				sendMessage(msg);
+				flag = type;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

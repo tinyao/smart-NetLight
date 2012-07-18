@@ -46,13 +46,15 @@
                 android:textColor="#00EC00" />
         </ScrollView>
         
-        <Button 
+        <ImageButton 
             android:id="@+id/clear_log"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:text="clear"/>"
+            android:src="@drawable/contact_list_clear"
+            android:background="#00000000"
+            android:text="clear"/>
     </RelativeLayout>
 
 </LinearLayout>

@@ -25,4 +25,15 @@ public class PrefConfig {
 	public static final int UPDATE_FACTOR = 11;
 	public static final int UPDATE_SENSOR = 12;
 	public static final int UPDATE_PEOPLE = 13;
+	
+	public static final int SET_FADE_TIME = 14;
+	public static final int SET_FADE_RATE = 15;
+	public static final int QUERY_FADE = 16;
+	
+	public static final int QUERY_TARGET_LUX = 17;
+	
+	public static final int QUERY_FACTOR_A = 18;
+	public static final int QUERY_FACTOR_B = 19;
+	public static final int QUERY_FACTOR_C = 20;
+	public static final int QUERY_FACTOR_D = 21;
 }

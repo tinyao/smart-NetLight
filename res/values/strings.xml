@@ -52,4 +52,6 @@
     <string name="group_leaf_join_txt">Join</string>
     <string name="group_edt_name_hint">group name</string>
     <string name="group_exist">Exist Group</string>
+    
+    <string name="target_edt_hint">0~1023</string>
 </resources>

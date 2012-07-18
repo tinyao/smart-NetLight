@@ -3,7 +3,7 @@
     android:id="@+id/group_set_panel"
     android:layout_width="match_parent"
     android:layout_height="250dip"
-    android:layout_marginTop="30dip"
+    android:layout_marginTop="20dip"
     android:background="#00000000"
     android:orientation="horizontal" >
 
@@ -37,8 +37,9 @@
         <Spinner
             android:id="@+id/group_spinner"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dip"
             android:layout_marginTop="10dip"
+            android:layout_gravity="center"
             android:prompt="@string/group_exist" />
 
         <EditText
@@ -46,6 +47,8 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="@string/group_edt_name_hint"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
             android:singleLine="true" />
 
         <Button
@@ -53,6 +56,8 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_marginTop="10dip"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
             android:text="@string/group_leaf_join_txt" />
     </LinearLayout>
 

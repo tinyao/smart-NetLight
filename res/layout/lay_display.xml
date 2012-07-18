@@ -146,10 +146,11 @@
                     android:textSize="13sp" />
 
                 <TextView
+                    android:id="@+id/sensorVal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="7dip"
-                    android:text="45 Lux"
+                    android:text="300"
                     android:textColor="#ff3"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -172,7 +173,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="7dip"
-                    android:text="50 Lux"
+                    android:text="0"
                     android:textColor="#ff3"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -195,7 +196,7 @@
                         android:id="@+id/is_factor_set"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/factor_unset" />
+                        android:src="@drawable/factor_set" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -215,7 +216,7 @@
                     <ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/factor_unset" />
+                        android:src="@drawable/factor_set" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -235,7 +236,7 @@
                     <ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:src="@drawable/factor_set" />
+                        android:src="@drawable/factor_unset" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -368,10 +369,23 @@
                     android:layout_marginTop="-4dip"
                     android:layout_weight="1"
                     android:background="@drawable/tab"
-                    android:textColor="#fff"
-                    android:textOff="单独调光"
-                    android:textOn="基本控制"
+                    android:textColor="@color/btn_text_selector"
+                    android:textOff="自动调光"
+                    android:textOn="自动调光"
                     android:checked="true"/>
+                
+                <ToggleButton
+                    android:id="@+id/ctrl_tab_2"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-4dip"
+                    android:layout_weight="1"
+                    android:background="@drawable/tab"
+                    android:textColor="@color/btn_text_selector"
+                    android:textOff="单独调光"
+                    android:textOn="单独调光"
+                    android:checked="false"/>
+                
             </LinearLayout>
 
             <LinearLayout
@@ -492,6 +506,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginRight="5dip"
+                            android:background="@drawable/btn_selector"
                             android:text="自动调光" />
 
                         <Button
@@ -500,29 +515,34 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginLeft="5dip"
-                            android:text="影响因子" />
+                            android:background="@drawable/btn_selector"
+                            android:text="更新因子" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:layout_marginTop="10dip"
+                        android:layout_marginTop="20dip"
                         android:orientation="horizontal" >
 
                         <Button
+                            android:id="@+id/fetch_factor"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginRight="5dip"
-                            android:text="感应照度" />
+                            android:background="@drawable/btn_selector"
+                            android:text="获取因子" />
 
                         <Button
+                            android:id="@+id/targetLux"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginLeft="5dip"
-                            android:text="查询照度" />
+                            android:background="@drawable/btn_selector"
+                            android:text="设置理想" />
                     </LinearLayout>
                 </LinearLayout>
 
