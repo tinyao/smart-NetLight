@@ -45,7 +45,6 @@
 	</string-array>
 	
 	<string-array name="fade_rate_array">
-	    <item>00</item>
 	    <item>01</item>
 	    <item>02</item>
 	    <item>03</item>

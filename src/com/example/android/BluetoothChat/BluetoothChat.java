@@ -459,6 +459,9 @@ public class BluetoothChat extends Activity {
 		fadeRateSpinner = (Spinner) layout3.findViewById(R.id.fade_rate_spinner);
 		fadeTimeBtn = (Button) layout3.findViewById(R.id.fade_time_btn);
 		fadeRateBtn = (Button) layout3.findViewById(R.id.fade_rate_btn);
+		
+		fadeTimeBtn.setOnClickListener(lay3btnListener);
+		fadeRateBtn.setOnClickListener(lay3btnListener);
 
 		groupSeek = (SeekBar) layout3.findViewById(R.id.group_seek);
 		groupSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener(){
@@ -1213,6 +1216,14 @@ public class BluetoothChat extends Activity {
 				String name = sceneNameEdt.getText().toString();
 				addCurrentLux2Scene(name);
 				break;
+			case R.id.fade_time_btn:
+				String hexFadeT = convertInt2Hex(Integer.valueOf(fadeTimeSpinner.getSelectedItem().toString()));
+				setFadeTime(hexFadeT);
+				break;
+			case R.id.fade_rate_btn:
+				String hexFadeR = convertInt2Hex(Integer.valueOf(fadeRateSpinner.getSelectedItem().toString()));
+				setFadeRate(hexFadeR);
+				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
 				break;
@@ -1221,6 +1232,27 @@ public class BluetoothChat extends Activity {
 
 
 	};
+	
+	
+	public void setFadeTime(String fadeT){
+		listl.clear();
+		listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeT, 0, -1));
+		listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
+		listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
+		while(!listl.isEmpty()){
+			listl.removeFirst().start();
+		}
+	}
+	
+	public void setFadeRate(String luxVal){
+		listl.clear();
+		listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + luxVal, 0, -1));
+		listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 200, PrefConfig.SET_FADE_RATE));
+		listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 400, PrefConfig.SET_FADE_RATE));
+		while(!listl.isEmpty()){
+			listl.removeFirst().start();
+		}
+	}
 
 	/* layout3 Spinner Selected Listener */
 	public AdapterView.OnItemSelectedListener spinnerSelectedListener = new OnItemSelectedListener() {
@@ -2029,9 +2061,41 @@ public class BluetoothChat extends Activity {
 			super.start();
 		}
 		
-		
-		
 	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// TODO Auto-generated method stub
+		if(keyCode == event.KEYCODE_BACK){
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("提示");
+			builder.setMessage("您确定要退出？");
+			builder.setPositiveButton("确定", new DialogInterface.OnClickListener(){
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					finish();
+				}
+				
+			});
+			builder.setNegativeButton("取消", new DialogInterface.OnClickListener(){
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+			});
+			builder.create().show();
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+	
+	
+	
 	
 }
 
