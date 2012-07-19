@@ -15,28 +15,28 @@
 -->
 
 <resources>
-    <string name="app_name">Bluetooth Chat</string>
+    <string name="app_name">Smart-NetLight</string>
 
     <!--  BluetoothChat -->
-    <string name="send">Send</string>
-    <string name="not_connected">You are not connected to a device</string>
-    <string name="bt_not_enabled_leaving">Bluetooth was not enabled. Leaving Bluetooth Chat.</string>
-    <string name="title_connecting">connecting...</string>
-    <string name="title_connected_to">connected: </string>
-    <string name="title_not_connected">not connected</string>
+    <string name="send">发送</string>
+    <string name="not_connected">您还未连接到蓝牙设备</string>
+    <string name="bt_not_enabled_leaving">蓝牙不可用，退出应用程序</string>
+    <string name="title_connecting">正在连接...</string>
+    <string name="title_connected_to">已连接: </string>
+    <string name="title_not_connected">未连接</string>
 
     <!--  DeviceListActivity -->
-    <string name="scanning">scanning for devices...</string>
-    <string name="select_device">select a device to connect</string>
-    <string name="none_paired">No devices have been paired</string>
-    <string name="none_found">No devices found</string>
-    <string name="title_paired_devices">Paired Devices</string>
-    <string name="title_other_devices">Other Available Devices</string>
-    <string name="button_scan">Scan for devices</string>
+    <string name="scanning">正在扫描周边蓝牙设备...</string>
+    <string name="select_device">选择一个设备建立连接</string>
+    <string name="none_paired">没有已配对的蓝牙设备</string>
+    <string name="none_found">未发现新蓝牙设备</string>
+    <string name="title_paired_devices">已配对设备</string>
+    <string name="title_other_devices">其他设备</string>
+    <string name="button_scan">扫描蓝牙设备</string>
 
     <!-- Options Menu -->
-    <string name="connect">Connect a device</string>
-    <string name="discoverable">Make discoverable</string>
+    <string name="connect">连接蓝牙</string>
+    <string name="discoverable">使自己可见</string>
     
     <string name="short_addr_prompt">可选地址</string>
     <string name="short_group_prompt">选择从机(多选)</string>
@@ -46,12 +46,13 @@
     <string name="short_address_set_ok">从机地址设置 成功！</string>
     <string name="short_address_set_fail">从机地址设置 失败！</string>
     
-    <string name="leaf_edt_name_hint">leaf name here</string>
-    <string name="leaf_name_btn_txt">OK</string>
-    <string name="leaf_set_btn_txt">Set</string>
-    <string name="group_leaf_join_txt">Join</string>
-    <string name="group_edt_name_hint">group name</string>
-    <string name="group_exist">Exist Group</string>
+    <string name="leaf_edt_name_hint">从机名称</string>
+    <string name="leaf_name_btn_txt">确定</string>
+    <string name="leaf_set_btn_txt">设置</string>
+    <string name="group_leaf_join_txt">加入</string>
+    <string name="group_edt_name_hint">组名</string>
+    <string name="group_exist">已存在组</string>
     
     <string name="target_edt_hint">0~1023</string>
+    <string name="sene_edt_hint">场景名称</string>
 </resources>

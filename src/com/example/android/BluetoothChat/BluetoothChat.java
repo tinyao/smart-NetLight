@@ -96,6 +96,8 @@ public class BluetoothChat extends Activity {
 	private View layout2 = null;
 	private View layout3 = null;
 
+	private boolean initBool = true;
+	
 	// Debugging
 	private static final String TAG = "BluetoothChat";
 	private static final boolean D = true;
@@ -131,15 +133,19 @@ public class BluetoothChat extends Activity {
 	private View pointer; // dashboard poioter
 	private Animation am; // pointer rotate animation
 	private TextView per1, per2, per3; // dashboard power percent
-	private TextView sensorVal;
+	private TextView sensorVal, sensorTargetVal;
 	private TextView leafSelect;
 	private View panel_1, panel_2, panel_3;
-	private ToggleButton tab_1, tab_2;
+	private ToggleButton tab_1, tab_2, tab_3;
 
 	private ToggleButton adjustBtn;
 	private Button factorBtn, targetLuxBtn, fetchFactorBtn;
 	private TextView lampA, lampB, lampC, lampD;
 	private ImageView refreshBtn;
+	
+	private Spinner sceneSpinner;
+	private EditText sceneNameEdt;
+	private Button recoverSceneBtn, addSceneBtn;
 	
 	// Layout panel 3
 	private Spinner operateSpinner;
@@ -158,7 +164,7 @@ public class BluetoothChat extends Activity {
 	private TextView LogInfo;
 	private ImageButton clearLogBtn;
 	private ScrollView logScroll;
-	private Cursor leafcursor, groupcursor;
+	private Cursor leafcursor, groupcursor, sceneCursor;
 	
 	private String curCtrlLeafAddr;	//Hex String
 	private String curCtrlLeafAddrNormal;
@@ -183,12 +189,14 @@ public class BluetoothChat extends Activity {
 	private SharedPreferences sp;
 	private MyDBHelper helper;
 	private GroupDBHelper groupHelper;
+	private SceneDBHelper sceneHelper;
 	
 	private int leafCurrent = -1;
 	private int groupCurrent = -1;
 	private String groupJoinLeaf = "";
 	private boolean queryLuxA, queryLuxB, queryLuxC, queryLuxD;
 	private String targetHexLux = "";
+	private ArrayList<String> sceneLuxArray = new ArrayList<String>(); 
 	
 	private AlarmReceiver alarmReceiver;
 	private Stack sendStack;
@@ -281,6 +289,7 @@ public class BluetoothChat extends Activity {
 		per3 = (TextView) layout2.findViewById(R.id.percent_3);
 		
 		sensorVal = (TextView) layout2.findViewById(R.id.sensorVal);
+		sensorTargetVal = (TextView) layout2.findViewById(R.id.sensorTargetVal);
 		leafSelect = (TextView) layout2.findViewById(R.id.leafSelect);
 		
 		seek1.setOnSeekBarChangeListener(listener);
@@ -298,6 +307,10 @@ public class BluetoothChat extends Activity {
 		lampD = (TextView)layout2.findViewById(R.id.lamp_d_lux);
 		refreshBtn = (ImageView)layout2.findViewById(R.id.refresh);
 		
+		sceneSpinner = (Spinner) layout2.findViewById(R.id.scene_spinner);
+		sceneNameEdt = (EditText) layout2.findViewById(R.id.scene_edt);
+		recoverSceneBtn = (Button) layout2.findViewById(R.id.recover_scene);
+		addSceneBtn = (Button) layout2.findViewById(R.id.add_scene);
 		
 //		adjustBtn.setOnClickListener(lay3btnListener);
 		factorBtn.setOnClickListener(lay3btnListener);
@@ -305,9 +318,13 @@ public class BluetoothChat extends Activity {
 		fetchFactorBtn.setOnClickListener(lay3btnListener);
 		leafSelect.setOnClickListener(lay3btnListener);
 		refreshBtn.setOnClickListener(lay3btnListener);
+		recoverSceneBtn.setOnClickListener(lay3btnListener);
+		addSceneBtn.setOnClickListener(lay3btnListener);
+		
 		
 		tab_1 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_1);
 		tab_2 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_2);
+		tab_3 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_3);
 
 		panel_1 = (View) layout2.findViewById(R.id.panel_1);
 		panel_2 = (View) layout2.findViewById(R.id.panel_2);
@@ -320,22 +337,26 @@ public class BluetoothChat extends Activity {
 				// TODO Auto-generated method stub
 				tab_1.setChecked(true);
 				tab_2.setChecked(false);
+				tab_3.setChecked(false);
 				panel_1.setVisibility(View.GONE);
 				panel_2.setVisibility(View.VISIBLE);
+				panel_3.setVisibility(View.GONE);
 				
 				// 离开单独调光面板，将fade恢复到此前的值
-				isInSeekPanel = false;
-				listl.clear();
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeTime, 0, -1));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeRate, 600, -1));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 800, PrefConfig.SET_FADE_RATE));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 1000, PrefConfig.SET_FADE_RATE));
-				while(!listl.isEmpty()){
-					listl.removeFirst().start();
+				if(isInSeekPanel){
+					isInSeekPanel = false;
+					listl.clear();
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeTime, 0, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeRate, 600, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 800, PrefConfig.SET_FADE_RATE));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 1000, PrefConfig.SET_FADE_RATE));
+					while(!listl.isEmpty()){
+						listl.removeFirst().start();
+					}
+					Log.d("DEBUG", "recover the fadetime and faderate");
 				}
-				Log.d("DEBUG", "recover the fadetime and faderate");
 			}
 			
 		});
@@ -347,15 +368,47 @@ public class BluetoothChat extends Activity {
 				// TODO Auto-generated method stub
 				tab_1.setChecked(false);
 				tab_2.setChecked(true);
+				tab_3.setChecked(false);
 				panel_1.setVisibility(View.VISIBLE);
 				panel_2.setVisibility(View.GONE);
-				
+				panel_3.setVisibility(View.GONE);
 				isInSeekPanel = true; //
 				
 				listl.clear();
 				// 查询当前的fade值，在收到回复后，继续执行任务，将fadeTime和fadeRate值设为0，1
 				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "a5", 0, PrefConfig.QUERY_FADE));
 				listl.removeFirst().start();
+			}
+			
+		});
+		
+		tab_3.setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				tab_1.setChecked(false);
+				tab_2.setChecked(false);
+				tab_3.setChecked(true);
+				panel_1.setVisibility(View.GONE);
+				panel_2.setVisibility(View.GONE);
+				panel_3.setVisibility(View.VISIBLE);
+				// 离开单独调光面板，将fade恢复到此前的值
+				if(isInSeekPanel){
+					isInSeekPanel = false;
+					listl.clear();
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeTime, 0, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeRate, 600, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 800, PrefConfig.SET_FADE_RATE));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 1000, PrefConfig.SET_FADE_RATE));
+					while(!listl.isEmpty()){
+						listl.removeFirst().start();
+					}
+					Log.d("DEBUG", "recover the fadetime and faderate");
+				}
+				fillSceneToSpinner();
 			}
 			
 		});
@@ -395,7 +448,7 @@ public class BluetoothChat extends Activity {
 
 		groupLeafList = (ListView) layout3.findViewById(R.id.group_leaf_list);
 		groupSpinner = (Spinner) layout3.findViewById(R.id.group_spinner);
-		groupNameEdt = (EditText) layout3.findViewById(R.id.leaf_name_edt);
+		groupNameEdt = (EditText) layout3.findViewById(R.id.group_name_edt);
 		groupJoinSet = (Button) layout3.findViewById(R.id.group_join_btn);
 
 		fadeTimeSpinner = (Spinner) layout3.findViewById(R.id.fade_time_spinner);
@@ -444,6 +497,7 @@ public class BluetoothChat extends Activity {
 
 		leafAddrSpinner.setOnItemSelectedListener(spinnerSelectedListener);
 		groupSpinner.setOnItemSelectedListener(spinnerSelectedListener);
+		sceneSpinner.setOnItemSelectedListener(spinnerSelectedListener);
 		
 		leafNameBtn.setOnClickListener(lay3btnListener);
 		leafAddrSet.setOnClickListener(lay3btnListener);
@@ -521,21 +575,23 @@ public class BluetoothChat extends Activity {
 				return;
 			}
 			
+			String adjustAddr = convertInt2Hex(Integer.valueOf(curCtrlLeafAddrNormal) - 1);
+			
 			switch(seekBar.getId()){
 			case R.id.seekBar1:
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, adjustAddr+s, 10, -1));
 				lampA.setText("" + progress + "%");
 				break;
 			case R.id.seekBar2:
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, adjustAddr+s, 10, -1));
 				lampB.setText("" + progress + "%");
 				break;
 			case R.id.seekBar3:
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, adjustAddr+s, 10, -1));
 				lampC.setText("" + progress + "%");
 				break;
 			case R.id.seekBar4:
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "02"+s, 10, -1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, adjustAddr+s, 10, -1));
 				lampD.setText("" + progress + "%");
 				break;
 			}
@@ -861,7 +917,7 @@ public class BluetoothChat extends Activity {
 						curCtrlLeafAddr = "0" + curCtrlLeafAddr;
 					}
 					setShortAddress(curCtrlLeafAddr, curCtrlLeafAddrNormal);
-					
+					queryToInitPanel();
 					break;
 				case BluetoothChatService.STATE_CONNECTING:
 					mTitle.setText(R.string.title_connecting);
@@ -1042,7 +1098,7 @@ public class BluetoothChat extends Activity {
 				Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 				long[] pattern = { 60, 60 }; // 停止 开启 停止 开启
 				vibrator.vibrate(pattern, -1);
-				queryLux();
+				queryLux(10, true);
 				break;
 			case R.id.factor_set:
 				resetFactor();
@@ -1110,12 +1166,21 @@ public class BluetoothChat extends Activity {
 						sp.edit().putString("cureent_leaf_name", name)
 							.putString("current_leaf_addr", addr).commit();
 						curCtrlLeafAddr = hexAddr;
+						leafSelect.setText(name);
 					}
 					
 				});
 				AlertDialog dialog = builder.create();
 				dialog.setCanceledOnTouchOutside(true);
 				dialog.show();
+				break;
+			case R.id.recover_scene:
+				//恢复场景设置
+				recoverScene();
+				break;
+			case R.id.add_scene:
+				String name = sceneNameEdt.getText().toString();
+				addCurrentLux2Scene(name);
 				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
@@ -1135,7 +1200,7 @@ public class BluetoothChat extends Activity {
 			// TODO Auto-generated method stub
 			switch (arg0.getId()) {
 			case R.id.group_spinner:
-				Log.d("DEBUG", "select--" + "");
+				Log.d("DEBUG", "select--group" + "");
 				groupcursor.moveToPosition(position);
 				String gName = groupcursor.getString(
 						groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_NAME));
@@ -1153,6 +1218,25 @@ public class BluetoothChat extends Activity {
 						groupLeafList.setItemChecked(Integer.valueOf(pos), true);
 				}
 				groupCurrent = position;
+				break;
+			case R.id.scene_spinner:
+				Log.d("DEBUG", "select--scene" + position);
+				sceneCursor.moveToPosition(position);
+				sceneLuxArray.clear();
+				String luxa = sceneCursor.getString(sceneCursor.getColumnIndexOrThrow(SceneDBHelper.SCENE_A));
+				String luxb = sceneCursor.getString(sceneCursor.getColumnIndexOrThrow(SceneDBHelper.SCENE_B));
+				String luxc = sceneCursor.getString(sceneCursor.getColumnIndexOrThrow(SceneDBHelper.SCENE_C));
+				String luxd = sceneCursor.getString(sceneCursor.getColumnIndexOrThrow(SceneDBHelper.SCENE_D));
+				sceneLuxArray.add(0, luxa);
+				sceneLuxArray.add(1, luxb);
+				sceneLuxArray.add(2, luxc);
+				sceneLuxArray.add(3, luxd);
+				Toast.makeText(BluetoothChat.this, 
+						"A: "+luxa +
+						"\tB: "+luxb +
+						"\nC: "+luxc +
+						"\tD: "+luxd,
+						Toast.LENGTH_SHORT).show();
 				break;
 			}
 		}
@@ -1176,6 +1260,9 @@ public class BluetoothChat extends Activity {
 		groupHelper = new GroupDBHelper(this);
 		groupHelper.openDataBase(groupHelper);
 		
+		sceneHelper = new SceneDBHelper(this);
+		sceneHelper.openDataBase(sceneHelper);
+		
 		if(sp.getBoolean(PrefConfig.FIRST_RUN, true)){
 			String leafTotal = "";
 			for(int i=0; i<16; i++){ //初始化16个从机，地址未设置
@@ -1194,6 +1281,19 @@ public class BluetoothChat extends Activity {
 		}
 		
 		fillData2LeafList();
+	}
+	
+	
+	public void fillSceneToSpinner(){
+		sceneCursor = sceneHelper.select();
+		SimpleCursorAdapter sceneAdapter = new SimpleCursorAdapter(BluetoothChat.this,
+				android.R.layout.simple_dropdown_item_1line, sceneCursor,
+				new String[] { SceneDBHelper.SCENE_NAME},
+				new int[] { android.R.id.text1});
+		sceneSpinner.setAdapter(sceneAdapter);
+		if(sceneCursor.getCount() == 0){
+			recoverSceneBtn.setEnabled(false);
+		}
 	}
 	
 	/*
@@ -1418,12 +1518,13 @@ public class BluetoothChat extends Activity {
 				new int[] { android.R.id.text1});
 		groupSpinner.setAdapter(existGroupAdapter);
 		
-		
 		leafSelect.setText(sp.getString("cureent_leaf_name", "选择"));
 		curCtrlLeafAddrNormal = sp.getString("cureent_leaf_addr", "03");
 		curCtrlLeafAddr = Integer.toHexString(Integer.valueOf(curCtrlLeafAddrNormal));
 		
 		Log.d("DEBUG", curCtrlLeafAddrNormal + "---" + curCtrlLeafAddr);
+		
+		fillSceneToSpinner();
 		
 	}
 	
@@ -1466,6 +1567,7 @@ public class BluetoothChat extends Activity {
 				// getResources().getString(R.string.short_address_set_fail),
 				// Toast.LENGTH_SHORT).show();
 			}
+			
 			break;
 		case PrefConfig.QUERY_LEAF_GROUP_1:
 //			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
@@ -1532,7 +1634,7 @@ public class BluetoothChat extends Activity {
 			panelHandler.sendMessage(msg);
 			break;
 		case PrefConfig.QUERY_SENSOR_LUX:
-			sensorVal.setText("" + res*4 + " Lux");
+			sensorVal.setText("" + res*4);
 			break;
 		case PrefConfig.QUERY_STATE:
 			//res
@@ -1577,7 +1679,12 @@ public class BluetoothChat extends Activity {
 			}else{
 				Toast.makeText(this, "理想照度值" + (res*4) + "设置失败，请重试！", Toast.LENGTH_SHORT).show();
 			}
+			sensorTargetVal.setText("" + res*4);
 			targetHexLux = "";
+			break;
+		case PrefConfig.QUERY_TARGET_LUX_INIT:
+			Log.d("DEBUG", "========== query target lux init==========" + res);
+			sensorTargetVal.setText("" + res*4);
 			break;
 		case PrefConfig.QUERY_FACTOR_A:
 			Log.d("DEBUG", "========== query factor A ==========" + res);
@@ -1641,7 +1748,7 @@ public class BluetoothChat extends Activity {
 			Log.d("DEBUG", "-----query-----");
 			if(mChatService.getState() == BluetoothChatService.STATE_CONNECTED){
 				
-				queryLux();
+				queryLux(00, true);
 				
 				int cur = sp.getInt("alarm_times", 0);
 				Log.d("DEBUG", "--cur--" + cur);
@@ -1666,23 +1773,78 @@ public class BluetoothChat extends Activity {
 
 	/**
 	 * 查询灯照度
+	 * @param runRightnow 
 	 */
-	public void queryLux(){
+	public void queryLux(int initSleep, boolean runRightnow){
 		
 		Log.d("DEBUG", "query lux -----------");
 		
 		listl.clear();//清空此前的任务队列
 		
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FA", 400, PrefConfig.QUERY_LAMP_LUX_A));
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FB", 0, PrefConfig.QUERY_LAMP_LUX_B));
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FC", 0, PrefConfig.QUERY_LAMP_LUX_C));
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FD", 0, PrefConfig.QUERY_LAMP_LUX_D));
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F5", 0, PrefConfig.QUERY_SENSOR_LUX));
-		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F4", 0, PrefConfig.QUERY_STATE));
-		listl.removeFirst().start();
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FA", initSleep, PrefConfig.QUERY_LAMP_LUX_A));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FB", 10, PrefConfig.QUERY_LAMP_LUX_B));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FC", 10, PrefConfig.QUERY_LAMP_LUX_C));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FD", 10, PrefConfig.QUERY_LAMP_LUX_D));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F5", 10, PrefConfig.QUERY_SENSOR_LUX));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F4", 10, PrefConfig.QUERY_STATE));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FE", 10, PrefConfig.QUERY_TARGET_LUX_INIT));
+		
+		if(runRightnow)
+			listl.removeFirst().start();
 		
 	}
 	
+	/**
+	 * 
+	 */
+	protected void queryToInitPanel() {
+		// TODO Auto-generated method stub
+		queryLux(10, false);
+	}
+	
+	/**
+	 * 
+	 */
+	protected void recoverScene(){
+		String adjustAddr = convertInt2Hex(Integer.valueOf(curCtrlLeafAddrNormal) - 1);
+		final String luxa = adjustAddr + convertInt2Hex(Integer.valueOf(sceneLuxArray.get(0))*255/100);
+		final String luxb = adjustAddr + convertInt2Hex(Integer.valueOf(sceneLuxArray.get(1))*255/100);
+		final String luxc = adjustAddr + convertInt2Hex(Integer.valueOf(sceneLuxArray.get(2))*255/100);
+		final String luxd = adjustAddr + convertInt2Hex(Integer.valueOf(sceneLuxArray.get(3))*255/100);
+		
+		Log.d("DEBUG", "recover: " + luxa + "-" + luxb + "-" + luxc + "-" + luxd);
+		
+		new Thread(){
+			
+			public void run(){
+				
+				try {
+					listl.clear();
+					sendMessage("a3" + "01");
+					sleep(300);
+					sendMessage(luxa);
+					sleep(300);
+					sendMessage("a3" + "02");
+					sleep(300);
+					sendMessage(luxb);
+					sleep(300);
+					sendMessage("a3" + "03");
+					sleep(300);
+					sendMessage(luxc);
+					sleep(300);
+					sendMessage("a3" + "04");
+					sleep(300);
+					sendMessage(luxd);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+			
+		}.start();
+		
+	}
 	
 	/**
 	 * 设置理想照度
@@ -1733,6 +1895,13 @@ public class BluetoothChat extends Activity {
 		
 	}
 	
+	/**
+	 * 查询目标照度
+	 */
+	public void queryTargetLux(int initSleep){
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FE", initSleep, PrefConfig.QUERY_TARGET_LUX_INIT));
+	}
+	
 	public void fetchExistFactor(){
 		listl.clear();
 		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E1", 0, PrefConfig.QUERY_FACTOR_A));
@@ -1741,6 +1910,17 @@ public class BluetoothChat extends Activity {
 		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E4", 0, PrefConfig.QUERY_FACTOR_D));
 		listl.removeFirst().start();
 	}
+	
+	
+	public void addCurrentLux2Scene(String sceneName){
+		String luxA = lampA.getText().toString().split("%")[0];
+		String luxB = lampB.getText().toString().split("%")[0];
+		String luxC = lampC.getText().toString().split("%")[0];
+		String luxD = lampD.getText().toString().split("%")[0];
+		sceneHelper.insert(sceneName, luxA, luxB, luxC, luxD);
+		fillSceneToSpinner();
+	}
+	
 	
 	/**
 	 * 重置影响因子
@@ -1767,7 +1947,7 @@ public class BluetoothChat extends Activity {
 		}
 		
 		ImageView factorImg = (ImageView)layout2.findViewById(R.id.is_factor_set);
-		if(st[5] == '1'){
+		if(st[5] == '0'){
 			factorImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
 		}else{
 			factorImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
@@ -1802,13 +1982,21 @@ public class BluetoothChat extends Activity {
 			try {
 				sleep(sleepTime);
 				sendMessage(msg);
-				flag = type;
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			super.run();
 		}
+
+		@Override
+		public synchronized void start() {
+			// TODO Auto-generated method stub
+			flag = type;
+			super.start();
+		}
+		
+		
 		
 	}
 	

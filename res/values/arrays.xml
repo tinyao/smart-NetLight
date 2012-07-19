@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="operations">
-        <item>Short Addr. Set</item>
-        <item>Group Join and Remove</item>
-        <item>Fade Control Settings</item>
-        <item>Power Control Settings</item>
-        <item>Query Device Infomation</item>
+        <item>设置从机地址</item>
+        <item>设置从机群组</item>
+        <item>渐变设置</item>
+        <item>功率最值控制</item>
     </string-array>
     
 	<string-array name="short_addr_array">

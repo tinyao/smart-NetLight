@@ -39,7 +39,7 @@
                 android:id="@+id/leafSelect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="35dip"
+                android:layout_marginLeft="40dip"
                 android:layout_marginTop="5dip"
                 android:text="灯组1"
                 android:textColor="#fff" >
@@ -126,7 +126,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="30dip"
                 android:layout_marginTop="72dip"
-                android:text="56W"
+                android:text="0.0W"
                 android:textColor="#ff3"
                 android:textSize="21sp" />
 
@@ -144,7 +144,7 @@
                     android:textSize="13sp" />
 
                 <TextView
-                    android:id="@+id/sensorVal"
+                    android:id="@+id/sensorTargetVal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="400"
@@ -170,9 +170,10 @@
                     android:id="@+id/sensorVal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="396"
+                    android:text="0"
                     android:textColor="#ff3"
                     android:textSize="13sp" />
+                
             </LinearLayout>
 
             <LinearLayout
@@ -270,7 +271,7 @@
                         android:id="@+id/lamp_a_lux"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="32"
+                        android:text="0%"
                         android:textColor="#ff3"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -293,7 +294,7 @@
                         android:id="@+id/lamp_b_lux"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="32"
+                        android:text="0%"
                         android:textColor="#ff3"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -316,7 +317,7 @@
                         android:id="@+id/lamp_c_lux"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="32"
+                        android:text="0%"
                         android:textColor="#ff3"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -339,7 +340,7 @@
                         android:id="@+id/lamp_d_lux"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="32"
+                        android:text="0%"
                         android:textColor="#ff3"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -383,6 +384,18 @@
                     android:textColor="@color/btn_text_selector"
                     android:textOff="单独调光"
                     android:textOn="单独调光"
+                    android:checked="false"/>
+                
+                <ToggleButton
+                    android:id="@+id/ctrl_tab_3"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-4dip"
+                    android:layout_weight="1"
+                    android:background="@drawable/tab"
+                    android:textColor="@color/btn_text_selector"
+                    android:textOff="场景恢复"
+                    android:textOn="场景恢复"
                     android:checked="false"/>
                 
             </LinearLayout>
@@ -494,7 +507,6 @@
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:visibility="gone"
                     android:layout_marginTop="30dip" >
 
                     <LinearLayout
@@ -550,93 +562,62 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- 单独调光模式  二 -->
+                <!-- 情景记忆  二 -->
 
                 <LinearLayout
                     android:id="@+id/panel_3"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    
-                    android:orientation="vertical" >
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="30dip" >
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dip"
                         android:gravity="center"
                         android:orientation="horizontal" >
-
-                        <TextView
-                            android:layout_width="wrap_content"
+						<Spinner 
+						    android:id="@+id/scene_spinner"
+						    android:layout_width="fill_parent"
+                            android:layout_height="50dip"
+                            android:layout_weight="0.8"
+                            android:contentDescription="场景"
+                            android:layout_marginRight="5dip"/>
+						<EditText 
+						    android:id="@+id/scene_edt"
+						    android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginRight="10dip"
-                            android:text="A灯" />
-
-                        <SeekBar
-                            android:id="@+id/seekBar1"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:max="100" >
-                        </SeekBar>
+                            android:layout_weight="1"
+                            android:layout_marginLeft="5dip"
+                            android:textSize="15sp"
+                            android:hint="@string/sene_edt_hint"/>
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5dip"
                         android:gravity="center"
+                        android:layout_marginTop="15dip"
                         android:orientation="horizontal" >
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <Button
+                            android:id="@+id/recover_scene"
+                            android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginRight="10dip"
-                            android:text="B灯" />
+                            android:layout_weight="0.8"
+                            android:layout_marginRight="5dip"
+                            android:background="@drawable/btn_selector"
+                            android:text="恢复场景" />
 
-                        <SeekBar
-                            android:id="@+id/seekBar2"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dip"
-                        android:gravity="center"
-                        android:orientation="horizontal" >
-
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <Button
+                            android:id="@+id/add_scene"
+                            android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginRight="10dip"
-                            android:text="C灯" />
-
-                        <SeekBar
-                            android:id="@+id/seekBar3"
-                            android:progress="34"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dip"
-                        android:gravity="center"
-                        android:orientation="horizontal" >
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginRight="10dip"
-                            android:text="D灯" />
-
-                        <SeekBar
-                            android:id="@+id/seekBar4"
-                            android:progress="100"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
+                            android:layout_weight="1"
+                            android:layout_marginLeft="5dip"
+                            android:background="@drawable/btn_selector"
+                            android:text="添加场景" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

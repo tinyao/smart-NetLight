@@ -24,7 +24,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dip"
-                android:text="FadeTime" />
+                android:text="渐变时间" />
 
             <Spinner
                 android:id="@+id/fade_time_spinner"
@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dip"
-                android:text="更新FadeTime" />
+                android:text="更新渐变时间" />
 
         </LinearLayout>
 
@@ -54,7 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dip"
-                android:text="FadeRate" />
+                android:text="渐变速率" />
 
             <Spinner
                 android:id="@+id/fade_rate_spinner"
@@ -68,7 +68,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dip"
-                android:text="更新FadeRate" />
+                android:text="更新渐变速率" />
 
         </LinearLayout>
 
