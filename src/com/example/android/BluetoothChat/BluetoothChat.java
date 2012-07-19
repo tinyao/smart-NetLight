@@ -54,6 +54,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.view.animation.TranslateAnimation;
@@ -153,6 +154,8 @@ public class BluetoothChat extends Activity {
 	private View groupPanel;
 	private View fadePanel;
 
+	private SeekBar groupSeek;
+	
 	private ListView leafList, groupLeafList;
 	private Spinner leafAddrSpinner, groupSpinner;
 	private EditText leafNameEdt, groupNameEdt;
@@ -162,7 +165,7 @@ public class BluetoothChat extends Activity {
 	private Button fadeTimeBtn, fadeRateBtn;
 	
 	private TextView LogInfo;
-	private ImageButton clearLogBtn;
+	private ImageButton clearLogBtn, clearDebugLog;
 	private ScrollView logScroll;
 	private Cursor leafcursor, groupcursor, sceneCursor;
 	
@@ -205,6 +208,7 @@ public class BluetoothChat extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		if (D)
 			Log.e(TAG, "+++ ON CREATE +++");
 
@@ -456,8 +460,34 @@ public class BluetoothChat extends Activity {
 		fadeTimeBtn = (Button) layout3.findViewById(R.id.fade_time_btn);
 		fadeRateBtn = (Button) layout3.findViewById(R.id.fade_rate_btn);
 
+		groupSeek = (SeekBar) layout3.findViewById(R.id.group_seek);
+		groupSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener(){
+
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				// TODO Auto-generated method stub
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"60"+convertInt2Hex(progress),10,-1));
+				listl.removeFirst().start();
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				listl.clear();
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
 		LogInfo = (TextView) layout3.findViewById(R.id.loginfo);
 		clearLogBtn = (ImageButton) layout3.findViewById(R.id.clear_log);
+		clearDebugLog = (ImageButton) layout1.findViewById(R.id.clear_debug_log);
 		logScroll = (ScrollView) layout3.findViewById(R.id.log_info_scroll);
 
 		initDatabase();
@@ -918,6 +948,7 @@ public class BluetoothChat extends Activity {
 					}
 					setShortAddress(curCtrlLeafAddr, curCtrlLeafAddrNormal);
 					queryToInitPanel();
+					clearDebugLog.setVisibility(View.VISIBLE);
 					break;
 				case BluetoothChatService.STATE_CONNECTING:
 					mTitle.setText(R.string.title_connecting);
@@ -1266,7 +1297,7 @@ public class BluetoothChat extends Activity {
 		if(sp.getBoolean(PrefConfig.FIRST_RUN, true)){
 			String leafTotal = "";
 			for(int i=0; i<16; i++){ //初始化16个从机，地址未设置
-				helper.insert("Leaf" + i, "00", "0");
+				helper.insert("从机" + i, "00", "0");
 				if(i == 0) 
 					leafTotal = "" + 0;
 				else
@@ -1274,7 +1305,7 @@ public class BluetoothChat extends Activity {
 			}
 			
 			for(int j=0; j<5; j++){
-				groupHelper.insert("Group" + j, "" + (96 + j), "");
+				groupHelper.insert("群组" + j, "" + (96 + j), "");
 			}
 			
 			sp.edit().putBoolean(PrefConfig.FIRST_RUN, false).commit();
@@ -1382,7 +1413,7 @@ public class BluetoothChat extends Activity {
 					}else{
 						// 查询是否设置成功, //是否载8～f内
 						sleep(200);
-						sendMessage(hexAddr + "c1"); 
+						sendMessage(hexAddr + "c1");
 						flag = PrefConfig.QUERY_LEAF_GROUP_2; // 等待响应，响应类型
 						toGroupId = Integer.valueOf(groupId) - 1;
 					}
@@ -1518,7 +1549,7 @@ public class BluetoothChat extends Activity {
 				new int[] { android.R.id.text1});
 		groupSpinner.setAdapter(existGroupAdapter);
 		
-		leafSelect.setText(sp.getString("cureent_leaf_name", "选择"));
+		leafSelect.setText(sp.getString("cureent_leaf_name", "< 选择 >"));
 		curCtrlLeafAddrNormal = sp.getString("cureent_leaf_addr", "03");
 		curCtrlLeafAddr = Integer.toHexString(Integer.valueOf(curCtrlLeafAddrNormal));
 		

@@ -38,6 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dip"
             android:layout_marginRight="5dip"
+            android:background="@drawable/btn_selector"
             android:text="@string/leaf_name_btn_txt" />
 
         <Spinner
@@ -54,6 +55,7 @@
             android:layout_marginLeft="5dip"
             android:layout_marginRight="5dip"
             android:layout_marginTop="6dip"
+            android:background="@drawable/btn_selector"
             android:text="@string/leaf_set_btn_txt" />
 
     </LinearLayout>

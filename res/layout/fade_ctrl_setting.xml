@@ -38,6 +38,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dip"
+                android:layout_marginRight="2dip"
+                android:layout_marginLeft="3dip"
+                android:background="@drawable/btn_selector"
                 android:text="更新渐变时间" />
 
         </LinearLayout>
@@ -68,6 +71,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dip"
+                android:background="@drawable/btn_selector"
+                android:layout_marginLeft="2dip"
+                android:layout_marginRight="3dip"
                 android:text="更新渐变速率" />
 
         </LinearLayout>

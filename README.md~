@@ -3,5 +3,40 @@ Smart-NetLight
 `Smart-NetLight`  从Android SDK中的‘BluetoothChat’修改而来，  使用DALI协议控制照明设备。本应用为参加英飞凌嵌入式设计大赛作品上位机程序。
 
 ##截图
-![Screenshot](https://github.com/tinyao/mBluetoothChat/blob/master/screenShot.png) 
+![Screenshot](https://github.com/tinyao/mBluetoothChat/raw/master/screenShot.png) 
+
+##演示内容
+
+//================
+
+连接到单片机
+
+初始化更新显示面板
+
+选择从机
+
+更新影响因子
+
+自动调光/停止自动：自动时，实际调节与理想的对比
+
+查询状态：因子？有人？自动？
+
+刷新照度值情况，表盘显示
+
+//================
+
+单独调光
+
+场景记忆
+
+//================
+
+设置从机地址
+
+从机群组设置
+
+群组调光
+
+渐变时间设置
+
 
