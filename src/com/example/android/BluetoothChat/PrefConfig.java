@@ -36,4 +36,8 @@ public class PrefConfig {
 	public static final int QUERY_FACTOR_B = 19;
 	public static final int QUERY_FACTOR_C = 20;
 	public static final int QUERY_FACTOR_D = 21;
+	public static final int QUERY_SENSOR_LUX = 22;
+	public static final int QUERY_STATE = 23;
+
 }
+

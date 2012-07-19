@@ -41,6 +41,7 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.DisplayMetrics;
@@ -131,11 +132,12 @@ public class BluetoothChat extends Activity {
 	private Animation am; // pointer rotate animation
 	private TextView per1, per2, per3; // dashboard power percent
 	private TextView sensorVal;
+	private TextView leafSelect;
 	private View panel_1, panel_2, panel_3;
 	private ToggleButton tab_1, tab_2;
 
-	private Button adjustBtn, factorBtn;
-	private Button targetLuxBtn, fetchFactorBtn;
+	private ToggleButton adjustBtn;
+	private Button factorBtn, targetLuxBtn, fetchFactorBtn;
 	private TextView lampA, lampB, lampC, lampD;
 	private ImageView refreshBtn;
 	
@@ -157,6 +159,9 @@ public class BluetoothChat extends Activity {
 	private ImageButton clearLogBtn;
 	private ScrollView logScroll;
 	private Cursor leafcursor, groupcursor;
+	
+	private String curCtrlLeafAddr;	//Hex String
+	private String curCtrlLeafAddrNormal;
 
 	private int flag = -1; // wait for the respond
 	private String responseCheck;
@@ -276,13 +281,14 @@ public class BluetoothChat extends Activity {
 		per3 = (TextView) layout2.findViewById(R.id.percent_3);
 		
 		sensorVal = (TextView) layout2.findViewById(R.id.sensorVal);
-
+		leafSelect = (TextView) layout2.findViewById(R.id.leafSelect);
+		
 		seek1.setOnSeekBarChangeListener(listener);
 		seek2.setOnSeekBarChangeListener(listener);
 		seek3.setOnSeekBarChangeListener(listener);
 		seek4.setOnSeekBarChangeListener(listener);
 		
-		adjustBtn = (Button)layout2.findViewById(R.id.auto_adjust);
+		adjustBtn = (ToggleButton)layout2.findViewById(R.id.auto_adjust);
 		factorBtn = (Button)layout2.findViewById(R.id.factor_set);
 		targetLuxBtn = (Button) layout2.findViewById(R.id.targetLux);
 		fetchFactorBtn = (Button) layout2.findViewById(R.id.fetch_factor);
@@ -293,10 +299,11 @@ public class BluetoothChat extends Activity {
 		refreshBtn = (ImageView)layout2.findViewById(R.id.refresh);
 		
 		
-		adjustBtn.setOnClickListener(lay3btnListener);
+//		adjustBtn.setOnClickListener(lay3btnListener);
 		factorBtn.setOnClickListener(lay3btnListener);
 		targetLuxBtn.setOnClickListener(lay3btnListener);
 		fetchFactorBtn.setOnClickListener(lay3btnListener);
+		leafSelect.setOnClickListener(lay3btnListener);
 		refreshBtn.setOnClickListener(lay3btnListener);
 		
 		tab_1 = (ToggleButton) layout2.findViewById(R.id.ctrl_tab_1);
@@ -320,11 +327,11 @@ public class BluetoothChat extends Activity {
 				isInSeekPanel = false;
 				listl.clear();
 				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeTime, 0, -1));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 200, PrefConfig.SET_FADE_TIME));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 400, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
 				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + fadeRate, 600, -1));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 800, PrefConfig.SET_FADE_RATE));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 1000, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 800, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 1000, PrefConfig.SET_FADE_RATE));
 				while(!listl.isEmpty()){
 					listl.removeFirst().start();
 				}
@@ -347,8 +354,28 @@ public class BluetoothChat extends Activity {
 				
 				listl.clear();
 				// 查询当前的fade值，在收到回复后，继续执行任务，将fadeTime和fadeRate值设为0，1
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "a5", 0, PrefConfig.QUERY_FADE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "a5", 0, PrefConfig.QUERY_FADE));
 				listl.removeFirst().start();
+			}
+			
+		});
+		
+		adjustBtn.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				// TODO Auto-generated method stub
+				ImageView autoImg = (ImageView) layout2.findViewById(R.id.is_auto_on);
+				if(!isChecked){
+					autoAdjust();
+					autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
+					Log.d("DEBUG", "已开启自动调光");
+				}else{
+					stopAutoAdjust();
+					autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
+					Log.d("DEBUG", "已停止自动调光");
+				}
 			}
 			
 		});
@@ -431,9 +458,13 @@ public class BluetoothChat extends Activity {
 				// TODO Auto-generated method stub
 				leafcursor.moveToPosition(pos);
 				String leafName = leafcursor.getString(leafcursor.getColumnIndex(MyDBHelper.LEAF_NAME));
-				int spos = Integer.valueOf(
+				int saddr = Integer.valueOf(
 						leafcursor.getString(leafcursor.getColumnIndex(MyDBHelper.LEAF_ADDR)));
-				leafAddrSpinner.setSelection((spos - 1)/2);
+				if(saddr != 0){
+					leafAddrSpinner.setSelection((saddr - 1)/2);
+				}else{
+					Toast.makeText(BluetoothChat.this, "该从机还未设置地址！", Toast.LENGTH_SHORT).show();
+				}
 				leafNameEdt.setText(leafName);
 				leafCurrent = pos; // 设置当前操作的从机position
 			}
@@ -569,7 +600,7 @@ public class BluetoothChat extends Activity {
 				break;
 			case PrefConfig.UPDATE_FACTOR:
 				ImageView factorImg = (ImageView)layout2.findViewById(R.id.is_factor_set);
-				factorImg.setBackgroundResource(R.drawable.factor_unset);
+				factorImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
 				break;
 			}
 
@@ -823,6 +854,14 @@ public class BluetoothChat extends Activity {
 					mTitle.setText(R.string.title_connected_to);
 					mTitle.append(mConnectedDeviceName);
 					mConversationArrayAdapter.clear();
+					
+					Log.d("DEBUG", curCtrlLeafAddr + "---connected---" + curCtrlLeafAddrNormal);
+					// 连接成功，设置地址，保证首次操作非查询
+					if(Integer.valueOf(curCtrlLeafAddrNormal) < 16){
+						curCtrlLeafAddr = "0" + curCtrlLeafAddr;
+					}
+					setShortAddress(curCtrlLeafAddr, curCtrlLeafAddrNormal);
+					
 					break;
 				case BluetoothChatService.STATE_CONNECTING:
 					mTitle.setText(R.string.title_connecting);
@@ -998,10 +1037,11 @@ public class BluetoothChat extends Activity {
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
 			switch (v.getId()) {
-			case R.id.auto_adjust:
-				autoAdjust();
-				break;
 			case R.id.refresh:
+				// 震动
+				Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+				long[] pattern = { 60, 60 }; // 停止 开启 停止 开启
+				vibrator.vibrate(pattern, -1);
 				queryLux();
 				break;
 			case R.id.factor_set:
@@ -1040,6 +1080,42 @@ public class BluetoothChat extends Activity {
 				break;
 			case R.id.fetch_factor:
 				fetchExistFactor();
+				break;
+			case R.id.leafSelect:
+				AlertDialog.Builder builder = new AlertDialog.Builder(BluetoothChat.this);
+				final Cursor addrleafCursor = helper.selectSet();
+				if(addrleafCursor.getCount() == 0){
+					Toast.makeText(BluetoothChat.this, "您还没有设置灯地址，转到设置面板开始设置...s", Toast.LENGTH_SHORT).show();
+					break;
+				}
+				SimpleCursorAdapter adapter = new SimpleCursorAdapter(BluetoothChat.this,
+						R.layout.leaf_select_item, addrleafCursor,
+						new String[] { MyDBHelper.LEAF_NAME, MyDBHelper.LEAF_ADDR},
+						new int[] { R.id.item_leaf_name, R.id.item_leaf_addr });
+				builder.setAdapter(adapter, new DialogInterface.OnClickListener(){
+
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						// TODO Auto-generated method stub
+						// 选中当前操作组
+						addrleafCursor.moveToPosition(which);
+						String name = addrleafCursor.getString(addrleafCursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
+						String addr = addrleafCursor.getString(addrleafCursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+						String hexAddr = Integer.toHexString(Integer.valueOf(addr));
+						if(Integer.valueOf(addr) < 16){
+							hexAddr = "0" + hexAddr;
+						}
+						setShortAddress(hexAddr, addr);
+						Log.d("DEBUG", "select leaf----------" + hexAddr);
+						sp.edit().putString("cureent_leaf_name", name)
+							.putString("current_leaf_addr", addr).commit();
+						curCtrlLeafAddr = hexAddr;
+					}
+					
+				});
+				AlertDialog dialog = builder.create();
+				dialog.setCanceledOnTouchOutside(true);
+				dialog.show();
 				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
@@ -1103,13 +1179,12 @@ public class BluetoothChat extends Activity {
 		if(sp.getBoolean(PrefConfig.FIRST_RUN, true)){
 			String leafTotal = "";
 			for(int i=0; i<16; i++){ //初始化16个从机，地址未设置
-				helper.insert("Leaf" + i, "03", "0");
+				helper.insert("Leaf" + i, "00", "0");
 				if(i == 0) 
 					leafTotal = "" + 0;
 				else
 					leafTotal = leafTotal + "," + i;
 			}
-//			groupHelper.insert("All", "0", leafTotal);
 			
 			for(int j=0; j<5; j++){
 				groupHelper.insert("Group" + j, "" + (96 + j), "");
@@ -1123,7 +1198,6 @@ public class BluetoothChat extends Activity {
 	
 	/*
 	 * ==========================================================================
-	 * =
 	 */
 	/* ================================发送指令==================================== */
 	/*
@@ -1284,11 +1358,18 @@ public class BluetoothChat extends Activity {
 	public void autoAdjust() {
 		// TODO Auto-generated method stub
 		
-		listl.addLast(new SendMsgTread(this, "03"+"EF", 200, -1));
-		listl.addLast(new SendMsgTread(this, "03"+"EE", 200, -1));
+//		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr+"EF", 0, -1));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr+"EE", 0, -1));
 		startQueryLux();
 		listl.removeFirst().start();
+//		listl.removeFirst().start();
 		
+	}
+	
+	public void stopAutoAdjust(){
+		listl.clear();
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr+"F0", 0, -1));
+		listl.removeFirst().start();
 	}
 
 	
@@ -1299,7 +1380,7 @@ public class BluetoothChat extends Activity {
 		
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, 
 				new Intent("com.tinyao.alarm"), 0);
-		alarms.setRepeating(alarmType, 2000, 3000, pendingIntent);
+		alarms.setRepeating(alarmType, 2000, 4000, pendingIntent);
 		
 		sp.edit().putInt("alarm_times", 30).commit();//闹钟五次
 	}
@@ -1336,6 +1417,14 @@ public class BluetoothChat extends Activity {
 				new String[] { GroupDBHelper.GROUP_NAME},
 				new int[] { android.R.id.text1});
 		groupSpinner.setAdapter(existGroupAdapter);
+		
+		
+		leafSelect.setText(sp.getString("cureent_leaf_name", "选择"));
+		curCtrlLeafAddrNormal = sp.getString("cureent_leaf_addr", "03");
+		curCtrlLeafAddr = Integer.toHexString(Integer.valueOf(curCtrlLeafAddrNormal));
+		
+		Log.d("DEBUG", curCtrlLeafAddrNormal + "---" + curCtrlLeafAddr);
+		
 	}
 	
 	public void refreshLeafListWithGroup(String groupId){
@@ -1364,6 +1453,7 @@ public class BluetoothChat extends Activity {
 			LogInfo.append("\n> " + "receive str: " + "0x" + convertInt2Hex(res));
 			if (res == Integer.valueOf(responseCheck)) {
 				LogInfo.append("\n> " + getResources().getString(R.string.short_address_set_ok));
+				if(leafCurrent == -1) break;
 				leafcursor.moveToPosition(leafCurrent);
 				int id = Integer.valueOf(
 						leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ID)));
@@ -1441,15 +1531,27 @@ public class BluetoothChat extends Activity {
 			msg.what = 0; // pointer rotate with the corresponding angle
 			panelHandler.sendMessage(msg);
 			break;
+		case PrefConfig.QUERY_SENSOR_LUX:
+			sensorVal.setText("" + res*4 + " Lux");
+			break;
+		case PrefConfig.QUERY_STATE:
+			//res
+			String state = Integer.toBinaryString(res);
+			while(state.length()<8){
+				state = "0" + state;
+			}
+			Log.d("DEBUG", "state----" + state);
+			setPanelState(state);
+			break;
 		case PrefConfig.QUERY_FADE:
 			Log.d("DEBUG", "query_fade");
 			if(isInSeekPanel){
 				listl.clear();
 				listl.addLast(new SendMsgTread(BluetoothChat.this, "a3" + "00", 0, -1));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 200, PrefConfig.SET_FADE_TIME));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2e", 400, PrefConfig.SET_FADE_TIME));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 600, PrefConfig.SET_FADE_RATE));
-				listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "2f", 800, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 200, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2e", 400, PrefConfig.SET_FADE_TIME));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 600, PrefConfig.SET_FADE_RATE));
+				listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "2f", 800, PrefConfig.SET_FADE_RATE));
 				while(!listl.isEmpty()){
 					listl.removeFirst().start();
 				}
@@ -1571,14 +1673,16 @@ public class BluetoothChat extends Activity {
 		
 		listl.clear();//清空此前的任务队列
 		
-		listl.addLast(new SendMsgTread(this, "03" + "FA", 0, PrefConfig.QUERY_LAMP_LUX_A));
-		listl.addLast(new SendMsgTread(this, "03" + "FB", 0, PrefConfig.QUERY_LAMP_LUX_B));
-		listl.addLast(new SendMsgTread(this, "03" + "FC", 0, PrefConfig.QUERY_LAMP_LUX_C));
-		listl.addLast(new SendMsgTread(this, "03" + "FD", 0, PrefConfig.QUERY_LAMP_LUX_D));
-		
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FA", 400, PrefConfig.QUERY_LAMP_LUX_A));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FB", 0, PrefConfig.QUERY_LAMP_LUX_B));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FC", 0, PrefConfig.QUERY_LAMP_LUX_C));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "FD", 0, PrefConfig.QUERY_LAMP_LUX_D));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F5", 0, PrefConfig.QUERY_SENSOR_LUX));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "F4", 0, PrefConfig.QUERY_STATE));
 		listl.removeFirst().start();
 		
 	}
+	
 	
 	/**
 	 * 设置理想照度
@@ -1603,10 +1707,10 @@ public class BluetoothChat extends Activity {
 					listl.clear();
 					// 设置理想照度
 					listl.addLast(new SendMsgTread(BluetoothChat.this, "c3" + tstr, 0, -1));
-					listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "F2", 200, -1));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "F2", 200, -1));
 					
 					// 查询理想照度 用于判断是否设置成功
-					listl.addLast(new SendMsgTread(BluetoothChat.this, "03" + "FE", 400, PrefConfig.QUERY_TARGET_LUX));
+					listl.addLast(new SendMsgTread(BluetoothChat.this, curCtrlLeafAddr + "FE", 400, PrefConfig.QUERY_TARGET_LUX));
 					while(!listl.isEmpty()){
 						listl.removeFirst().start();
 					}
@@ -1631,10 +1735,10 @@ public class BluetoothChat extends Activity {
 	
 	public void fetchExistFactor(){
 		listl.clear();
-		listl.addLast(new SendMsgTread(this, "03" + "E1", 0, PrefConfig.QUERY_FACTOR_A));
-		listl.addLast(new SendMsgTread(this, "03" + "E2", 0, PrefConfig.QUERY_FACTOR_B));
-		listl.addLast(new SendMsgTread(this, "03" + "E3", 0, PrefConfig.QUERY_FACTOR_C));
-		listl.addLast(new SendMsgTread(this, "03" + "E4", 0, PrefConfig.QUERY_FACTOR_D));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E1", 0, PrefConfig.QUERY_FACTOR_A));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E2", 0, PrefConfig.QUERY_FACTOR_B));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E3", 0, PrefConfig.QUERY_FACTOR_C));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "E4", 0, PrefConfig.QUERY_FACTOR_D));
 		listl.removeFirst().start();
 	}
 	
@@ -1642,7 +1746,7 @@ public class BluetoothChat extends Activity {
 	 * 重置影响因子
 	 */
 	public void resetFactor(){
-		listl.addLast(new SendMsgTread(this, "03" + "EF", 200, PrefConfig.UPDATE_FACTOR));
+		listl.addLast(new SendMsgTread(this, curCtrlLeafAddr + "EF", 200, PrefConfig.UPDATE_FACTOR));
 		if(!listl.isEmpty())
 			listl.removeFirst().start();
 		Message msg = panelHandler.obtainMessage();
@@ -1650,6 +1754,34 @@ public class BluetoothChat extends Activity {
 		panelHandler.sendMessage(msg);
 	}
 
+	private void setPanelState(String state){
+		char[] st = state.toCharArray();
+		ImageView autoImg = (ImageView) layout2.findViewById(R.id.is_auto_on);
+		if(st[7] == '1'){ //auto
+//			adjustBtn.setChecked(false);
+			autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
+		}else{
+//			adjustBtn.setChecked(true);
+			autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
+			
+		}
+		
+		ImageView factorImg = (ImageView)layout2.findViewById(R.id.is_factor_set);
+		if(st[5] == '1'){
+			factorImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
+		}else{
+			factorImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
+		}
+		
+		ImageView personImg = (ImageView)layout2.findViewById(R.id.is_person_in);
+		if(st[4] == '1'){
+			personImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
+		}else{
+			personImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
+		}
+		
+	}
+	
 	LinkedList<SendMsgTread> listl = new LinkedList<SendMsgTread>();
 	
 	public class SendMsgTread extends Thread{
