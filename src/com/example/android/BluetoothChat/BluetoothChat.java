@@ -467,7 +467,7 @@ public class BluetoothChat extends Activity {
 			public void onProgressChanged(SeekBar seekBar, int progress,
 					boolean fromUser) {
 				// TODO Auto-generated method stub
-				listl.addLast(new SendMsgTread(BluetoothChat.this,"60"+convertInt2Hex(progress),10,-1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"80"+convertInt2Hex(progress),10,-1));
 				listl.removeFirst().start();
 			}
 
