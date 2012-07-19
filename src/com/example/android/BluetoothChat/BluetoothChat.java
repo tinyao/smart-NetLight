@@ -1821,20 +1821,22 @@ public class BluetoothChat extends Activity {
 				try {
 					listl.clear();
 					sendMessage("a3" + "01");
-					sleep(300);
+					sleep(250);
 					sendMessage(luxa);
-					sleep(300);
+					sleep(200);
 					sendMessage("a3" + "02");
-					sleep(300);
+					sleep(250);
 					sendMessage(luxb);
-					sleep(300);
+					sleep(200);
 					sendMessage("a3" + "03");
-					sleep(300);
+					sleep(250);
 					sendMessage(luxc);
-					sleep(300);
+					sleep(200);
 					sendMessage("a3" + "04");
-					sleep(300);
+					sleep(250);
 					sendMessage(luxd);
+					sleep(300);
+					queryLux(0, true);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
