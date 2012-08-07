@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fade_ctrl_panel"
     android:layout_width="match_parent"
     android:layout_height="250dip"
+    android:layout_marginTop="20dip"
     android:background="#00000000"
     android:gravity="right"
-    android:id="@+id/fade_ctrl_panel"
-    android:layout_marginTop="20dip"
     android:orientation="vertical" >
 
     <LinearLayout
@@ -15,6 +15,7 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginRight="3dip"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical" >
@@ -26,28 +27,44 @@
                 android:layout_marginBottom="20dip"
                 android:text="渐变时间" />
 
-            <Spinner
-                android:id="@+id/fade_time_spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:prompt="@string/fade_time_spinner_prompt"
-                android:entries="@array/fade_time_array" />
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <Spinner
+                    android:id="@+id/fade_time_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="4dip"
+                    android:layout_marginRight="2.5dip"
+                    android:background="@drawable/spinner_selector"
+                    android:entries="@array/fade_time_array"
+                    android:paddingLeft="35dip"
+                    android:prompt="@string/fade_time_spinner_prompt" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:paddingLeft="10dip"
+                    android:src="@drawable/fade_time_hint" />
+            </RelativeLayout>
 
             <Button
                 android:id="@+id/fade_time_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="15dip"
-                android:layout_marginRight="2dip"
                 android:layout_marginLeft="3dip"
+                android:layout_marginRight="2dip"
+                android:layout_marginTop="15dip"
                 android:background="@drawable/btn_selector"
                 android:text="更新渐变时间" />
-
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_marginLeft="3dip"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical" >
@@ -59,25 +76,39 @@
                 android:layout_marginBottom="20dip"
                 android:text="渐变速率" />
 
-            <Spinner
-                android:id="@+id/fade_rate_spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:prompt="@string/fade_rate_spinner_prompt"
-                android:entries="@array/fade_rate_array" />
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <Spinner
+                    android:id="@+id/fade_rate_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="2.5dip"
+                    android:layout_marginRight="4dip"
+                    android:background="@drawable/spinner_selector"
+                    android:entries="@array/fade_rate_array"
+                    android:paddingLeft="35dip"
+                    android:prompt="@string/fade_rate_spinner_prompt" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:paddingLeft="10dip"
+                    android:src="@drawable/fade_rate_hint" />
+            </RelativeLayout>
 
             <Button
                 android:id="@+id/fade_rate_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="15dip"
-                android:background="@drawable/btn_selector"
                 android:layout_marginLeft="2dip"
                 android:layout_marginRight="3dip"
+                android:layout_marginTop="15dip"
+                android:background="@drawable/btn_selector"
                 android:text="更新渐变速率" />
-
         </LinearLayout>
-
     </LinearLayout>
-    	
+
 </LinearLayout>

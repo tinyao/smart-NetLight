@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="#000"
+    android:background="@drawable/background"
+    android:gravity="center_horizontal"
     android:orientation="vertical" >
 
     <TextView
@@ -13,50 +14,88 @@
         android:text="未连接"
         android:textColor="#fff" />
 
-    <RelativeLayout
+    <ImageView
+        android:id="@+id/phone_pic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dip"
+        android:src="@drawable/phone" />
+
+    <Button
+        android:id="@+id/connect_bt_btn"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1" >
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dip"
+        android:layout_marginRight="15dip"
+        android:layout_marginTop="20dip"
+        android:background="@drawable/btn_selector"
+        android:text="连接设备" />
 
-        <ImageButton
-            android:id="@+id/clear_debug_log"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginRight="10dip"
-            android:layout_marginTop="10dip"
-            android:background="#00000000"
-            android:visibility="gone"
-            android:src="@drawable/contact_list_clear" />
-
-        <ListView
-            android:id="@+id/in"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:cacheColorHint="#00000000"
-            android:stackFromBottom="true"
-            android:transcriptMode="alwaysScroll" />
-    </RelativeLayout>
+    <ToggleButton
+        android:id="@+id/show_debug_btn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dip"
+        android:layout_marginRight="15dip"
+        android:layout_marginTop="20dip"
+        android:background="@drawable/btn_selector"
+        android:textOff="显示调试窗口"
+        android:textOn="隐藏调试窗口" />
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+        android:id="@+id/debug_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:visibility="gone" >
 
-        <EditText
-            android:id="@+id/edit_text_out"
+        <RelativeLayout
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_weight="1" />
+            android:layout_height="fill_parent"
+            android:layout_weight="1" >
 
-        <Button
-            android:id="@+id/button_send"
-            android:layout_width="fill_parent"
+            <ImageButton
+                android:id="@+id/clear_debug_log"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginRight="10dip"
+                android:layout_marginTop="10dip"
+                android:background="#00000000"
+                android:src="@drawable/contact_list_clear"
+                android:visibility="gone" />
+
+            <ListView
+                android:id="@+id/in"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:cacheColorHint="#00000000"
+                android:stackFromBottom="true"
+                android:transcriptMode="alwaysScroll" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/send" />
+            android:orientation="horizontal" >
+
+            <EditText
+                android:id="@+id/edit_text_out"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_weight="1"
+                android:background="@drawable/input_selector" />
+
+            <Button
+                android:id="@+id/button_send"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/btn_selector"
+                android:text="@string/send" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

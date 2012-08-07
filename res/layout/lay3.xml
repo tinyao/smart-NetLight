@@ -12,6 +12,8 @@
         android:layout_marginLeft="5dip"
         android:layout_marginRight="5dip"
         android:layout_marginTop="10dip"
+        android:prompt="@string/operation_prompt"
+        android:background="@drawable/spinner_selector"
         android:entries="@array/operations" />
 
     <LinearLayout
@@ -30,7 +32,6 @@
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:background="#000"
         android:layout_margin="10dip" >
 
         <ScrollView
@@ -42,6 +43,8 @@
                 android:id="@+id/loginfo"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:paddingLeft="6dip"
+                android:background="@drawable/bg_logout"
                 android:text="> log out here..."
                 android:textColor="#00EC00" />
         </ScrollView>

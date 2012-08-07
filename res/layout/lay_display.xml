@@ -18,7 +18,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/b2g"
+    android:background="@drawable/background"
     android:orientation="vertical"
     android:scrollbars="none" >
 
@@ -136,7 +136,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="30dip"
                 android:layout_marginTop="135dip"
-                android:orientation="horizontal">
+                android:orientation="horizontal" >
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -151,7 +152,7 @@
                     android:textColor="#ff3"
                     android:textSize="13sp" />
             </LinearLayout>
-            
+
             <LinearLayout
                 android:id="@+id/linearLayout1"
                 android:layout_width="wrap_content"
@@ -173,7 +174,6 @@
                     android:text="0"
                     android:textColor="#ff3"
                     android:textSize="13sp" />
-                
             </LinearLayout>
 
             <LinearLayout
@@ -359,7 +359,6 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
-                
                 android:orientation="horizontal" >
 
                 <ToggleButton
@@ -369,11 +368,11 @@
                     android:layout_marginTop="-4dip"
                     android:layout_weight="1"
                     android:background="@drawable/tab"
+                    android:checked="true"
                     android:textColor="@color/btn_text_selector"
                     android:textOff="自动调光"
-                    android:textOn="自动调光"
-                    android:checked="true"/>
-                
+                    android:textOn="自动调光" />
+
                 <ToggleButton
                     android:id="@+id/ctrl_tab_2"
                     android:layout_width="fill_parent"
@@ -381,11 +380,11 @@
                     android:layout_marginTop="-4dip"
                     android:layout_weight="1"
                     android:background="@drawable/tab"
+                    android:checked="false"
                     android:textColor="@color/btn_text_selector"
                     android:textOff="单独调光"
-                    android:textOn="单独调光"
-                    android:checked="false"/>
-                
+                    android:textOn="单独调光" />
+
                 <ToggleButton
                     android:id="@+id/ctrl_tab_3"
                     android:layout_width="fill_parent"
@@ -393,11 +392,10 @@
                     android:layout_marginTop="-4dip"
                     android:layout_weight="1"
                     android:background="@drawable/tab"
+                    android:checked="false"
                     android:textColor="@color/btn_text_selector"
                     android:textOff="场景恢复"
-                    android:textOn="场景恢复"
-                    android:checked="false"/>
-                
+                    android:textOn="场景恢复" />
             </LinearLayout>
 
             <LinearLayout
@@ -421,7 +419,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="20dip"
+                        android:layout_marginTop="15dip"
                         android:gravity="center"
                         android:orientation="horizontal" >
 
@@ -435,7 +433,9 @@
                             android:id="@+id/seekBar1"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:max="100" >
+                            android:max="100"
+                            android:progressDrawable="@drawable/seekbar_horizontal"
+                            android:thumb="@drawable/thumb_selector" >
                         </SeekBar>
                     </LinearLayout>
 
@@ -455,7 +455,9 @@
                         <SeekBar
                             android:id="@+id/seekBar2"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:progressDrawable="@drawable/seekbar_horizontal"
+                            android:thumb="@drawable/thumb_selector" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -473,9 +475,11 @@
 
                         <SeekBar
                             android:id="@+id/seekBar3"
-                            android:progress="34"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:progress="34"
+                            android:progressDrawable="@drawable/seekbar_horizontal"
+                            android:thumb="@drawable/thumb_selector" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -493,12 +497,13 @@
 
                         <SeekBar
                             android:id="@+id/seekBar4"
-                            android:progress="100"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:progress="100"
+                            android:progressDrawable="@drawable/seekbar_horizontal"
+                            android:thumb="@drawable/thumb_selector" />
                     </LinearLayout>
                 </LinearLayout>
-                
 
                 <!-- 控制按钮 -->
 
@@ -506,8 +511,8 @@
                     android:id="@+id/panel_2"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="30dip" >
+                    android:layout_marginTop="30dip"
+                    android:orientation="vertical" >
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -519,18 +524,18 @@
                             android:id="@+id/auto_adjust"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginRight="5dip"
+                            android:layout_weight="1"
                             android:background="@drawable/btn_selector"
-                            android:textOn="自动调光"
-                            android:textOff="停止自动" />
+                            android:textOff="停止自动"
+                            android:textOn="自动调光" />
 
                         <Button
                             android:id="@+id/factor_set"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginLeft="5dip"
+                            android:layout_weight="1"
                             android:background="@drawable/btn_selector"
                             android:text="更新因子" />
                     </LinearLayout>
@@ -538,16 +543,16 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:layout_marginTop="20dip"
+                        android:gravity="center"
                         android:orientation="horizontal" >
 
                         <Button
                             android:id="@+id/fetch_factor"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginRight="5dip"
+                            android:layout_weight="1"
                             android:background="@drawable/btn_selector"
                             android:text="获取因子" />
 
@@ -555,8 +560,8 @@
                             android:id="@+id/targetLux"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginLeft="5dip"
+                            android:layout_weight="1"
                             android:background="@drawable/btn_selector"
                             android:text="设置理想" />
                     </LinearLayout>
@@ -568,45 +573,49 @@
                     android:id="@+id/panel_3"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="30dip"
                     android:orientation="vertical"
-                    android:visibility="gone"
-                    android:layout_marginTop="30dip" >
+                    android:visibility="gone" >
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="horizontal" >
-						<Spinner 
-						    android:id="@+id/scene_spinner"
-						    android:layout_width="fill_parent"
-                            android:layout_height="50dip"
-                            android:layout_weight="0.8"
-                            android:contentDescription="场景"
-                            android:layout_marginRight="5dip"/>
-						<EditText 
-						    android:id="@+id/scene_edt"
-						    android:layout_width="fill_parent"
+
+                        <Spinner
+                            android:id="@+id/scene_spinner"
+                            android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_marginRight="5dip"
+                            android:layout_weight="0.8"
+                            android:background="@drawable/spinner_selector"
+                            android:contentDescription="场景" />
+
+                        <EditText
+                            android:id="@+id/scene_edt"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
                             android:layout_marginLeft="5dip"
-                            android:textSize="15sp"
-                            android:hint="@string/sene_edt_hint"/>
+                            android:layout_weight="1"
+                            android:background="@drawable/input_selector"
+                            android:hint="@string/sene_edt_hint"
+                            android:textSize="15sp" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:layout_marginTop="15dip"
+                        android:gravity="center"
                         android:orientation="horizontal" >
 
                         <Button
                             android:id="@+id/recover_scene"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="0.8"
                             android:layout_marginRight="5dip"
+                            android:layout_weight="0.8"
                             android:background="@drawable/btn_selector"
                             android:text="恢复场景" />
 
@@ -614,8 +623,8 @@
                             android:id="@+id/add_scene"
                             android:layout_width="fill_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginLeft="5dip"
+                            android:layout_weight="1"
                             android:background="@drawable/btn_selector"
                             android:text="添加场景" />
                     </LinearLayout>

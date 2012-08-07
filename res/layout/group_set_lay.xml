@@ -3,73 +3,105 @@
     android:id="@+id/group_set_panel"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="10dip"
+    android:layout_marginTop="20dip"
     android:background="#00000000"
     android:orientation="vertical" >
-    
-    <LinearLayout 
-        android:layout_width="match_parent"
-    	android:layout_height="250dip"
-    	android:orientation="horizontal">
-        
-    <ListView
-        android:id="@+id/group_leaf_list"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:cacheColorHint="#00000000" />
 
     <LinearLayout
-        android:id="@+id/group_opeation"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:orientation="vertical" >
+        android:layout_width="match_parent"
+        android:layout_height="250dip"
+        android:orientation="horizontal" >
 
-        <ScrollView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" >
-
-        </ScrollView>
-
-        <Spinner
-            android:id="@+id/group_spinner"
-            android:layout_width="fill_parent"
-            android:layout_height="50dip"
-            android:layout_marginTop="5dip"
-            android:layout_gravity="center"
-            android:layout_marginLeft="3dip"
-            android:layout_marginRight="3dip"
-            android:prompt="@string/group_exist" />
-
-        <EditText
-            android:id="@+id/group_name_edt"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/group_edt_name_hint"
-            android:layout_marginLeft="5dip"
-            android:layout_marginRight="5dip"
-            android:singleLine="true" />
-
-        <Button
-            android:id="@+id/group_join_btn"
+        <ListView
+            android:id="@+id/group_leaf_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_marginTop="10dip"
+            android:layout_weight="1"
+            android:background="@drawable/bg_dial"
+            android:cacheColorHint="#00000000" />
+
+        <LinearLayout
+            android:id="@+id/group_opeation"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
             android:layout_marginLeft="5dip"
-            android:layout_marginRight="5dip"
-            android:background="@drawable/btn_selector"
-            android:text="@string/group_leaf_join_txt" />
-    </LinearLayout>
-    
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <Spinner
+                    android:id="@+id/group_spinner"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingLeft="35dip"
+                    android:prompt="@string/group_exist" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:paddingLeft="10dip"
+                    android:paddingTop="3dip"
+                    android:src="@drawable/group_name_hint" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+
+                <EditText
+                    android:id="@+id/group_name_edt"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dip"
+                    android:background="@drawable/input_selector"
+                    android:hint="@string/group_edt_name_hint"
+                    android:paddingLeft="35dip"
+                    android:singleLine="true"
+                    android:textSize="15sp" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:paddingLeft="10dip"
+                    android:paddingTop="4dip"
+                    android:src="@drawable/leaf_name_hint" />
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/group_name_ok_btn"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dip"
+                android:background="@drawable/btn_selector"
+                android:text="@string/group_name_btn_txt" />
+
+            <Button
+                android:id="@+id/group_join_btn"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="5dip"
+                android:background="@drawable/btn_selector"
+                android:text="@string/group_leaf_join_txt" />
+        </LinearLayout>
     </LinearLayout>
 
-    <SeekBar 
+    <SeekBar
         android:id="@+id/group_seek"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dip"
+        android:layout_marginLeft="2dip"
+        android:layout_marginRight="2dip"
         android:max="100"
-        android:progress="0"/>
-    
+        android:progress="0"
+        android:background="@drawable/bg_dial"
+        android:progressDrawable="@drawable/seekbar_horizontal"
+        android:thumb="@drawable/thumb_selector" />
+
 </LinearLayout>
