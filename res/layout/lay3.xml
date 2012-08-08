@@ -5,16 +5,34 @@
     android:background="@drawable/background"
     android:orientation="vertical" >
 
-    <Spinner
-        android:id="@+id/operatons_spi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="5dip"
-        android:layout_marginRight="5dip"
-        android:layout_marginTop="10dip"
-        android:prompt="@string/operation_prompt"
-        android:background="@drawable/spinner_selector"
-        android:entries="@array/operations" />
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <Spinner
+            android:id="@+id/operatons_spi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:layout_marginTop="10dip"
+            android:paddingLeft="40dip"
+            android:background="@drawable/spinner_selector"
+            android:dropDownHorizontalOffset="30dip"
+            android:dropDownVerticalOffset="1dip"
+            android:dropDownWidth="268dip"
+            android:gravity="center_horizontal"
+            android:prompt="@string/operation_prompt"
+            android:spinnerMode="dropdown" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:paddingLeft="20dip"
+            android:paddingTop="6dip"
+            android:src="@drawable/spinner_operation_hint" />
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/ctrl_panel"
@@ -24,15 +42,18 @@
         android:layout_marginRight="5dip" >
 
         <include layout="@layout/leaf_addr_set_lay" />
-        <include layout="@layout/group_set_lay"/>
+
+        <include layout="@layout/group_set_lay" />
+
         <include layout="@layout/fade_ctrl_setting" />
-        
     </LinearLayout>
 
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_margin="10dip" >
+        android:layout_marginTop="15dip"
+        android:layout_marginLeft="5dip"
+        android:layout_marginRight="5dip" >
 
         <ScrollView
             android:id="@+id/log_info_scroll"
@@ -43,21 +64,21 @@
                 android:id="@+id/loginfo"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:paddingLeft="6dip"
                 android:background="@drawable/bg_logout"
+                android:paddingLeft="6dip"
                 android:text="> log out here..."
                 android:textColor="#00EC00" />
         </ScrollView>
-        
-        <ImageButton 
+
+        <ImageButton
             android:id="@+id/clear_log"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:src="@drawable/contact_list_clear"
             android:background="#00000000"
-            android:text="clear"/>
+            android:src="@drawable/contact_list_clear"
+            android:text="clear" />
     </RelativeLayout>
 
 </LinearLayout>

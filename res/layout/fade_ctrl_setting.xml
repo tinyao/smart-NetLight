@@ -38,9 +38,13 @@
                     android:layout_marginLeft="4dip"
                     android:layout_marginRight="2.5dip"
                     android:background="@drawable/spinner_selector"
+                    android:dropDownVerticalOffset="1dip"
+                    android:dropDownWidth="110dip"
                     android:entries="@array/fade_time_array"
+                    android:gravity="center_horizontal"
                     android:paddingLeft="35dip"
-                    android:prompt="@string/fade_time_spinner_prompt" />
+                    android:prompt="@string/fade_time_spinner_prompt"
+                    android:spinnerMode="dropdown" />
 
                 <ImageView
                     android:layout_width="wrap_content"
@@ -87,9 +91,13 @@
                     android:layout_marginLeft="2.5dip"
                     android:layout_marginRight="4dip"
                     android:background="@drawable/spinner_selector"
+                    android:dropDownVerticalOffset="1dip"
+                    android:dropDownWidth="110dip"
                     android:entries="@array/fade_rate_array"
+                    android:gravity="center_horizontal"
                     android:paddingLeft="35dip"
-                    android:prompt="@string/fade_rate_spinner_prompt" />
+                    android:prompt="@string/fade_rate_spinner_prompt"
+                    android:spinnerMode="dropdown" />
 
                 <ImageView
                     android:layout_width="wrap_content"

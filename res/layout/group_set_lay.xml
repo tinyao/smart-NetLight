@@ -17,7 +17,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1"
-            android:background="@drawable/bg_dial"
+            android:background="@drawable/bg_logout"
             android:cacheColorHint="#00000000" />
 
         <LinearLayout
@@ -37,9 +37,13 @@
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:prompt="@string/group_exist"
                     android:background="@drawable/spinner_selector"
+                    android:dropDownVerticalOffset="1dip"
+                    android:dropDownWidth="113dip"
+                    android:gravity="center_horizontal"
                     android:paddingLeft="35dip"
-                    android:prompt="@string/group_exist" />
+                    android:spinnerMode="dropdown" />
 
                 <ImageView
                     android:layout_width="wrap_content"
@@ -98,9 +102,10 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="2dip"
         android:layout_marginRight="2dip"
+        android:background="@drawable/bg_dial"
         android:max="100"
         android:progress="0"
-        android:background="@drawable/bg_dial"
+        android:visibility="gone"
         android:progressDrawable="@drawable/seekbar_horizontal"
         android:thumb="@drawable/thumb_selector" />
 

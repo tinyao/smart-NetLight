@@ -12,7 +12,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_weight="1"
-        android:background="@drawable/bg_dial"
+        android:background="@drawable/bg_logout"
         android:cacheColorHint="#00000000" />
 
     <LinearLayout
@@ -64,6 +64,10 @@
                 android:layout_marginTop="5dip"
                 android:prompt="@string/leaf_address_spinner_prompt"
                 android:paddingLeft="35dip"
+                android:spinnerMode="dropdown"
+                android:dropDownVerticalOffset="0.5dip"
+                android:dropDownWidth="111dip"
+                android:gravity="center_horizontal"
                 android:background="@drawable/spinner_selector" />
 
             <ImageView

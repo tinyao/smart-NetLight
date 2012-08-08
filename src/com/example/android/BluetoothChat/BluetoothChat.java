@@ -163,7 +163,7 @@ public class BluetoothChat extends Activity {
 	private ListView leafList, groupLeafList;
 	private Spinner leafAddrSpinner, groupSpinner;
 	private EditText leafNameEdt, groupNameEdt;
-	private Button leafNameBtn, leafAddrSet, groupJoinSet;
+	private Button leafNameBtn, leafAddrSet, groupNameOk, groupJoinSet;
 
 	private Spinner fadeTimeSpinner, fadeRateSpinner;
 	private Button fadeTimeBtn, fadeRateBtn;
@@ -500,6 +500,7 @@ public class BluetoothChat extends Activity {
 		groupLeafList = (ListView) layout3.findViewById(R.id.group_leaf_list);
 		groupSpinner = (Spinner) layout3.findViewById(R.id.group_spinner);
 		groupNameEdt = (EditText) layout3.findViewById(R.id.group_name_edt);
+		groupNameOk = (Button)layout3.findViewById(R.id.group_name_ok_btn);
 		groupJoinSet = (Button) layout3.findViewById(R.id.group_join_btn);
 
 		fadeTimeSpinner = (Spinner) layout3.findViewById(R.id.fade_time_spinner);
@@ -587,6 +588,7 @@ public class BluetoothChat extends Activity {
 		
 		leafNameBtn.setOnClickListener(lay3btnListener);
 		leafAddrSet.setOnClickListener(lay3btnListener);
+		groupNameOk.setOnClickListener(lay3btnListener);
 		groupJoinSet.setOnClickListener(lay3btnListener);
 		clearLogBtn.setOnClickListener(lay3btnListener);
 		
@@ -655,11 +657,6 @@ public class BluetoothChat extends Activity {
 				boolean fromUser) {
 			// TODO Auto-generated method stub
 			
-			Message msg = panelHandler.obtainMessage();
-			msg.what = 0; // pointer rotate with the corresponding angle
-			msg.arg1 = progress;
-			panelHandler.sendMessage(msg);	//动画效果
-			
 			if(mChatService.getState() != BluetoothChatService.STATE_CONNECTED){
 				return;
 			}
@@ -708,6 +705,11 @@ public class BluetoothChat extends Activity {
 					}
 				}
 			}.start();
+			
+			Message msg = panelHandler.obtainMessage();
+			msg.what = 0; // pointer rotate with the corresponding angle
+			msg.arg1 = progress;
+			panelHandler.sendMessage(msg);	//动画效果
 			
 		}
 	};
@@ -1195,6 +1197,7 @@ public class BluetoothChat extends Activity {
 	/* layout3 Button Click Listener */
 	public View.OnClickListener lay3btnListener = new OnClickListener() {
 
+		@SuppressWarnings("deprecation")
 		@Override
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
@@ -1214,9 +1217,11 @@ public class BluetoothChat extends Activity {
 					valueOf(leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ID)));
 				String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
 				String group = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_GROUP));
-				helper.update(updateId, 
-						leafNameEdt.getText().toString(), addr, group);
-				fillData2LeafList();
+				helper.update(updateId, leafNameEdt.getText().toString(), addr, group);
+				
+				leafcursor.requery();
+				leafList.invalidateViews();
+				
 				break;
 			case R.id.leaf_set_btn:		// 设置从机地址
 				if(!detectConnected()) return;
@@ -1302,12 +1307,24 @@ public class BluetoothChat extends Activity {
 				String hexFadeR = convertInt2Hex(Integer.valueOf(fadeRateSpinner.getSelectedItem().toString()));
 				setFadeRate(hexFadeR);
 				break;
+			case R.id.group_name_ok_btn:
+//				if(groupNameEdt.getText().toString().equals("")){
+//					Toast.makeText(BluetoothChat.this, "null", Toast.LENGTH_SHORT).show();
+//					return;
+//				}
+//				groupHelper.update(int id, String groupName, String groupAddr, String leaf)
+//				SimpleCursorAdapter existGroupAdapter = new SimpleCursorAdapter(BluetoothChat.this,
+//						android.R.layout.simple_spinner_item, groupcursor,
+//						new String[] { GroupDBHelper.GROUP_NAME},
+//						new int[] { android.R.id.text1});
+//				existGroupAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+//				groupSpinner.setAdapter(existGroupAdapter);				
+				break;
 			case R.id.clear_log:
 				LogInfo.setText("");
 				break;
 			}
 		}
-
 
 	};
 	
@@ -1423,16 +1440,37 @@ public class BluetoothChat extends Activity {
 		
 		fillData2LeafList();
 		
+		fillArray2Spinner();
+		
+	}
+	
+	
+	private void fillArray2Spinner() {
+		// TODO Auto-generated method stub
 		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
 	            this, R.array.short_addr_array, android.R.layout.simple_spinner_item);
 		adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 		leafAddrSpinner.setAdapter(adapter);
+		
+		adapter = ArrayAdapter.createFromResource(
+	            this, R.array.operations, android.R.layout.simple_spinner_item);
+		adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+		operateSpinner.setAdapter(adapter);
+		
+		adapter = ArrayAdapter.createFromResource(
+	            this, R.array.fade_time_array, android.R.layout.simple_spinner_item);
+		adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+		fadeTimeSpinner.setAdapter(adapter);
+		
+		adapter = ArrayAdapter.createFromResource(
+	            this, R.array.fade_rate_array, android.R.layout.simple_spinner_item);
+		adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+		fadeRateSpinner.setAdapter(adapter);
 	}
-	
-	
+
 	public void fillSceneToSpinner(){
 		sceneCursor = sceneHelper.select();
-		SimpleCursorAdapter sceneAdapter = new SimpleCursorAdapter(BluetoothChat.this,
+		SimpleCursorAdapter sceneAdapter = new SimpleCursorAdapter(this,
 				android.R.layout.simple_spinner_item, sceneCursor,
 				new String[] { SceneDBHelper.SCENE_NAME},
 				new int[] { android.R.id.text1});
@@ -2068,6 +2106,9 @@ public class BluetoothChat extends Activity {
 		String luxB = lampB.getText().toString().split("%")[0];
 		String luxC = lampC.getText().toString().split("%")[0];
 		String luxD = lampD.getText().toString().split("%")[0];
+		
+		Toast.makeText(this, luxA+luxB+luxC+luxD, Toast.LENGTH_SHORT).show();
+		
 		sceneHelper.insert(sceneName, luxA, luxB, luxC, luxD);
 		fillSceneToSpinner();
 	}
