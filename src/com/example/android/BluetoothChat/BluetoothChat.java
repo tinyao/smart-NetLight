@@ -186,6 +186,8 @@ public class BluetoothChat extends Activity {
 	private boolean isInSeekPanel = false;
 	private String fadeTime="00", fadeRate="01";
 
+	private LinkedList<GroupAddThread> gthreadlist = new LinkedList<GroupAddThread>();;
+	
 	// Name of the connected device
 	private String mConnectedDeviceName = null;
 	// Array adapter for the conversation thread
@@ -1566,14 +1568,17 @@ public class BluetoothChat extends Activity {
 	
 	public void setGroupMembers(String groupId, String groupAddress, ArrayList<HashMap<String, Object>> array){
 		
+		gthreadlist.clear();
+		
 		for(HashMap<String, Object> map : array){
 			String address = String.valueOf(map.get("address"));//十进制
 			groupJoinLeaf = String.valueOf(map.get("leaf_name"));
 			String hexAddr = convertInt2Hex(Integer.valueOf(address));//十六进制地址
 			String groupHexAddr = convertInt2Hex(Integer.valueOf(groupAddress));
 			if(map.get("operate").equals("join")){
-				LogInfo.append("> adding " + groupJoinLeaf + " to " + curGroupName + " ...");
-				addGroupMember(groupId, groupHexAddr, hexAddr);
+//				addGroupMember(groupId, groupHexAddr, hexAddr);
+				gthreadlist.addLast(new GroupAddThread(groupId, groupHexAddr,
+						hexAddr, groupJoinLeaf, curGroupName, 1000*array.indexOf(map)));
 			}else if(map.get("operate").equals("delete")){
 //				LogInfo.append("> removing " + groupJoinLeaf + " from " + curGroupName + " ...");
 //				removeGroupMember(groupId, groupHexAddr, hexAddr);
@@ -1602,6 +1607,11 @@ public class BluetoothChat extends Activity {
 				groupcursor.requery();
 				groupSpinner.invalidate();
 			}
+			
+		}
+		
+		if(!gthreadlist.isEmpty()){
+			gthreadlist.removeFirst().start();
 		}
 		
 	}
@@ -1615,38 +1625,95 @@ public class BluetoothChat extends Activity {
 		
 		Log.d("DEBUG", "----groupId----" + groupId + "---");
 		
-		new Thread() {
-			public void run() {
-				try {
-					sendMessage(hexAddr + groupAddress);
-					sleep(250);
-					sendMessage(hexAddr + groupAddress);
+		
+//		new Thread() {
+//			public void run() {
+//				try {
+//					sendMessage(hexAddr + groupAddress);
+//					sleep(250);
+//					sendMessage(hexAddr + groupAddress);
+//					sleep(200);
+//					sendMessage("ff82");
+//					sleep(200);
+//					sendMessage("ff82");
+//					
+//					if(Integer.valueOf(groupId) <= 8){
+//						// 查询是否设置成功, //是否载0～7内
+//						sleep(200);
+//						sendMessage(hexAddr + "c0"); 
+//						flag = PrefConfig.QUERY_LEAF_GROUP_1; // 等待响应，响应类型
+//						toGroupId = Integer.valueOf(groupId) - 1;
+//						//LogInfo.append("> " + "QUERY_LEAF_GROUP_1" + " -- groupId" + toGroupId);
+//					}else{
+//						// 查询是否设置成功, //是否载8～f内
+//						sleep(200);
+//						sendMessage(hexAddr + "c1");
+//						flag = PrefConfig.QUERY_LEAF_GROUP_2; // 等待响应，响应类型
+//						toGroupId = Integer.valueOf(groupId) - 1;
+//					}
+//					
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		}.start();
+		
+	}
+	
+	
+	class GroupAddThread extends Thread{
+
+		String groupId, groupAddress, hexAddr;
+		int sleepTime;
+		String _groupJoinLeaf, _curGroupName;
+		
+		public GroupAddThread(String groupId, String groupAddress, String hexAddr,
+				String _groupJoinLeaf, String _curGroupName, int sleepTime){
+			this.groupId = groupId;
+			this.groupAddress = groupAddress;
+			this.hexAddr = hexAddr;
+			this.sleepTime = sleepTime;
+			this._curGroupName = _curGroupName;
+			this._groupJoinLeaf = _groupJoinLeaf;
+		}
+		
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			try {
+				sleep(sleepTime);
+				Log.d("------", "> adding " + _curGroupName + " to " + _groupJoinLeaf + " ...");
+				groupJoinLeaf = _groupJoinLeaf;
+				sendMessage(hexAddr + groupAddress);
+				sleep(250);
+				sendMessage(hexAddr + groupAddress);
+				sleep(200);
+				sendMessage("ff82");
+				sleep(200);
+				sendMessage("ff82");
+				
+				if(Integer.valueOf(groupId) <= 8){
+					// 查询是否设置成功, //是否载0～7内
 					sleep(200);
-					sendMessage("ff82");
+					sendMessage(hexAddr + "c0"); 
+					flag = PrefConfig.QUERY_LEAF_GROUP_1; // 等待响应，响应类型
+					toGroupId = Integer.valueOf(groupId) - 1;
+					//LogInfo.append("> " + "QUERY_LEAF_GROUP_1" + " -- groupId" + toGroupId);
+				}else{
+					// 查询是否设置成功, //是否载8～f内
 					sleep(200);
-					sendMessage("ff82");
-					
-					if(Integer.valueOf(groupId) <= 8){
-						// 查询是否设置成功, //是否载0～7内
-						sleep(200);
-						sendMessage(hexAddr + "c0"); 
-						flag = PrefConfig.QUERY_LEAF_GROUP_1; // 等待响应，响应类型
-						toGroupId = Integer.valueOf(groupId) - 1;
-						//LogInfo.append("> " + "QUERY_LEAF_GROUP_1" + " -- groupId" + toGroupId);
-					}else{
-						// 查询是否设置成功, //是否载8～f内
-						sleep(200);
-						sendMessage(hexAddr + "c1");
-						flag = PrefConfig.QUERY_LEAF_GROUP_2; // 等待响应，响应类型
-						toGroupId = Integer.valueOf(groupId) - 1;
-					}
-					
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					sendMessage(hexAddr + "c1");
+					flag = PrefConfig.QUERY_LEAF_GROUP_2; // 等待响应，响应类型
+					toGroupId = Integer.valueOf(groupId) - 1;
 				}
+				
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		}.start();
+			super.run();
+		}
 		
 	}
 	
@@ -1840,6 +1907,9 @@ public class BluetoothChat extends Activity {
 					Log.d("DEBUG", "fail: add " + groupJoinLeaf + " to " + curGroupName);
 					LogInfo.append("\n> fail: " + "add " + groupJoinLeaf + " to " + curGroupName);
 				}
+				if(!gthreadlist.isEmpty()){
+					gthreadlist.removeFirst().start();
+				}
 			}
 			break;
 		case PrefConfig.QUERY_LEAF_GROUP_2:
@@ -1853,6 +1923,9 @@ public class BluetoothChat extends Activity {
 				}else{
 					Log.d("DEBUG", "fail: add " + groupJoinLeaf + " to group " + toGroupId);
 					LogInfo.append("\nfail: " + "add " + groupJoinLeaf + " to group " + toGroupId);
+				}
+				if(!gthreadlist.isEmpty()){
+					gthreadlist.removeFirst().start();
 				}
 			}
 			break;
