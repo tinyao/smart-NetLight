@@ -37,12 +37,15 @@
 
             <TextView
                 android:id="@+id/leafSelect"
-                android:layout_width="wrap_content"
+                android:layout_width="60dip"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="35dip"
+                android:layout_marginLeft="30dip"
                 android:layout_marginTop="5dip"
                 android:text="灯组1"
-                android:textColor="#fff" >
+                android:gravity="center"
+                android:singleLine="true"
+                android:textColor="#fff" 
+                android:textSize="14sp">
             </TextView>
 
             <ImageView

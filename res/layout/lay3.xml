@@ -53,7 +53,9 @@
         android:layout_height="fill_parent"
         android:layout_marginTop="15dip"
         android:layout_marginLeft="5dip"
-        android:layout_marginRight="5dip" >
+        android:layout_marginRight="5dip"
+        android:layout_marginBottom="5dip"
+        android:background="@drawable/bg_logout" >
 
         <ScrollView
             android:id="@+id/log_info_scroll"
@@ -63,8 +65,7 @@
             <TextView
                 android:id="@+id/loginfo"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_logout"
+                android:layout_height="match_parent"
                 android:paddingLeft="6dip"
                 android:text="> log out here..."
                 android:textColor="#00EC00" />
