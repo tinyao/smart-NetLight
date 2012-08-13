@@ -105,7 +105,6 @@
         android:background="@drawable/bg_dial"
         android:max="100"
         android:progress="0"
-        android:visibility="gone"
         android:progressDrawable="@drawable/seekbar_horizontal"
         android:thumb="@drawable/thumb_selector" />
 

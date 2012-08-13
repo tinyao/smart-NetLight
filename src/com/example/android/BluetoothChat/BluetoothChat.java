@@ -530,21 +530,24 @@ public class BluetoothChat extends Activity {
 					return;
 				}
 				
-				listl.addLast(new SendMsgTread(BluetoothChat.this,"80"+convertInt2Hex(progress),10,-1));
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"80" + convertInt2Hex(progress*255/100),200,-1));
 				listl.removeFirst().start();
 			}
 
 			@Override
 			public void onStartTrackingTouch(SeekBar seekBar) {
 				// TODO Auto-generated method stub
+				groupJoinSet.setEnabled(false);
 				listl.clear();
 				if(!detectConnected()) return;
+				listl.addLast(new SendMsgTread(BluetoothChat.this,"a300",10,-1));
+				listl.removeFirst().start();
 			}
 
 			@Override
 			public void onStopTrackingTouch(SeekBar seekBar) {
 				// TODO Auto-generated method stub
-				
+				groupJoinSet.setEnabled(true);
 			}
 			
 		});
@@ -696,6 +699,8 @@ public class BluetoothChat extends Activity {
 			}
 			
 			String adjustAddr = convertInt2Hex(curCtrlAddrInt - 1);
+			
+			Log.d("debug", "-------------" + curCtrlAddrInt + "--" + adjustAddr + "--" + s);
 			
 			switch(seekBar.getId()){
 			case R.id.seekBar1:
@@ -1070,6 +1075,11 @@ public class BluetoothChat extends Activity {
 				String writeMessage = BytesToString(writeBuf);
 				mConversationArrayAdapter.add("Me:  " + writeMessage);
 				LogInfo.append("\n> " + "send cmd: " + writeMessage);
+				logScroll.post(new Runnable() {
+					public void run() {
+						logScroll.fullScroll(ScrollView.FOCUS_DOWN);
+					}
+				});
 				break;
 			case MESSAGE_READ:
 				byte[] readBuf = (byte[]) msg.obj;
@@ -1412,7 +1422,6 @@ public class BluetoothChat extends Activity {
 				if(!leaves.equals("")){
 					String[] leafID = leaves.split(",");
 					Log.d("DEBUG", "select--" + leaves);
-					LogInfo.append("---" + leafID);
 					for(String pos:leafID)
 						groupLeafList.setItemChecked(Integer.valueOf(pos), true);
 				}
@@ -1569,7 +1578,7 @@ public class BluetoothChat extends Activity {
 	public void setGroupMembers(String groupId, String groupAddress, ArrayList<HashMap<String, Object>> array){
 		
 		gthreadlist.clear();
-		
+		String newleaves = ""; 
 		for(HashMap<String, Object> map : array){
 			String address = String.valueOf(map.get("address"));//十进制
 			groupJoinLeaf = String.valueOf(map.get("leaf_name"));
@@ -1579,36 +1588,55 @@ public class BluetoothChat extends Activity {
 //				addGroupMember(groupId, groupHexAddr, hexAddr);
 				gthreadlist.addLast(new GroupAddThread(groupId, groupHexAddr,
 						hexAddr, groupJoinLeaf, curGroupName, 1000*array.indexOf(map)));
+				if(newleaves.equals("")){
+					newleaves = newleaves + map.get("position");
+				}else{
+					newleaves = newleaves + "," + map.get("position");
+				}
+				
 			}else if(map.get("operate").equals("delete")){
 //				LogInfo.append("> removing " + groupJoinLeaf + " from " + curGroupName + " ...");
 //				removeGroupMember(groupId, groupHexAddr, hexAddr);
-				String groupleaves = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_LEAF));
-				String pos = String.valueOf(map.get("position"));
-				String newleaves = "";
-				// 删除pos
-				if(!groupleaves.equals("")){
-					String[] aa = groupleaves.split(",");
-					for(String a:aa){
-						if(!a.equals(pos)){
-							if(newleaves.equals("")) 
-								newleaves = newleaves + a;
-							else
-								newleaves = newleaves + "," + a;
-						}
-					}
-				}
-				
-				int updateGid = Integer.
-						valueOf(groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID)));
-				String groupaddr = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ADDR));
-				String groupname = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_NAME));
-				groupHelper.update(updateGid, groupname, groupaddr, newleaves);
-					
-				groupcursor.requery();
-				groupSpinner.invalidate();
+//				String groupleaves = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_LEAF));
+//				String pos = String.valueOf(map.get("position"));
+//				String newleaves = "";
+//				// 删除pos
+//				if(!groupleaves.equals("")){
+//					String[] aa = groupleaves.split(",");
+//					for(String a:aa){
+//						if(!a.equals(pos)){
+//							if(newleaves.equals("")) 
+//								newleaves = newleaves + a;
+//							else
+//								newleaves = newleaves + "," + a;
+//						}
+//					}
+//				}
+//				
+//				int updateGid = Integer.
+//						valueOf(groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID)));
+//				String groupaddr = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ADDR));
+//				String groupname = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_NAME));
+//				groupHelper.update(updateGid, groupname, groupaddr, newleaves);
+//					
+//				groupcursor.requery();
+//				groupSpinner.invalidate();
 			}
 			
 		}
+		
+		if(!newleaves.equals("")){
+			// 写入数据库: 组含从机 id
+			int updateGid = Integer.
+					valueOf(groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ID)));
+			String groupaddr = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_ADDR));
+			String groupname = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_NAME));
+			groupHelper.update(updateGid, groupname, groupaddr, newleaves);
+			
+			groupcursor.requery();
+			groupSpinner.invalidate();
+		}
+		
 		
 		if(!gthreadlist.isEmpty()){
 			gthreadlist.removeFirst().start();
@@ -1842,6 +1870,7 @@ public class BluetoothChat extends Activity {
 		
 		leafSelect.setText(sp.getString("cureent_leaf_name", "< 选择 >"));
 		curCtrlLeafAddrNormal = sp.getString("cureent_leaf_addr", "03");
+		curCtrlAddrInt = Integer.valueOf(curCtrlLeafAddrNormal);
 		curCtrlLeafAddr = Integer.toHexString(Integer.valueOf(curCtrlLeafAddrNormal));
 		
 		Log.d("DEBUG", curCtrlLeafAddrNormal + "---" + curCtrlLeafAddr);
@@ -1883,6 +1912,9 @@ public class BluetoothChat extends Activity {
 				String lname = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
 				String group = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_GROUP));
 				helper.update(id, lname, responseCheck, group);
+				leafcursor.requery();
+				leafList.invalidateViews();
+				
 				curCtrlAddrInt = res;
 			} else {
 				LogInfo.append("\n> " + getResources().getString( R.string.short_address_set_fail));
@@ -2045,7 +2077,6 @@ public class BluetoothChat extends Activity {
 				logScroll.fullScroll(ScrollView.FOCUS_DOWN);
 			}
 		});
-		
 		
 	}
 
@@ -2273,10 +2304,10 @@ public class BluetoothChat extends Activity {
 		char[] st = state.toCharArray();
 		ImageView autoImg = (ImageView) layout2.findViewById(R.id.is_auto_on);
 		if(st[7] == '1'){ //auto
-//			adjustBtn.setChecked(false);
+//			adjustBtn.setChecked(true);
 			autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
 		}else{
-//			adjustBtn.setChecked(true);
+//			adjustBtn.setChecked(false);
 			autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
 			
 		}
