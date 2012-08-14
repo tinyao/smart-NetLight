@@ -1054,8 +1054,8 @@ public class BluetoothChat extends Activity {
 					if(Integer.valueOf(curCtrlLeafAddrNormal) < 16){
 						curCtrlLeafAddr = "0" + curCtrlLeafAddr;
 					}
-					setShortAddress(curCtrlLeafAddr, curCtrlLeafAddrNormal);
-					queryToInitPanel();
+//					setShortAddress(curCtrlLeafAddr, curCtrlLeafAddrNormal);
+//					queryToInitPanel();
 					clearDebugLog.setVisibility(View.VISIBLE);
 					break;
 				case BluetoothChatService.STATE_CONNECTING:
@@ -1318,10 +1318,11 @@ public class BluetoothChat extends Activity {
 						String name = addrleafCursor.getString(addrleafCursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
 						String addr = addrleafCursor.getString(addrleafCursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
 						String hexAddr = Integer.toHexString(Integer.valueOf(addr));
+						curCtrlAddrInt = Integer.valueOf(addr);
 						if(Integer.valueOf(addr) < 16){
 							hexAddr = "0" + hexAddr;
 						}
-						setShortAddress(hexAddr, addr);
+//						setShortAddress(hexAddr, addr);
 						Log.d("DEBUG", "select leaf----------" + hexAddr);
 						sp.edit().putString("cureent_leaf_name", name)
 							.putString("current_leaf_addr", addr).commit();
