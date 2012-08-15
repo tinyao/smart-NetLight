@@ -37,12 +37,12 @@
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:prompt="@string/group_exist"
                     android:background="@drawable/spinner_selector"
                     android:dropDownVerticalOffset="1dip"
                     android:dropDownWidth="113dip"
                     android:gravity="center_horizontal"
                     android:paddingLeft="35dip"
+                    android:prompt="@string/group_exist"
                     android:spinnerMode="dropdown" />
 
                 <ImageView
@@ -85,6 +85,16 @@
                 android:layout_marginTop="5dip"
                 android:background="@drawable/btn_selector"
                 android:text="@string/group_name_btn_txt" />
+
+            <ToggleButton
+                android:id="@+id/group_auto_adjust"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dip"
+                android:background="@drawable/btn_selector"
+                android:textOff="自动调光"
+                android:textOn="停止自动"
+                android:checked="true" />
 
             <Button
                 android:id="@+id/group_join_btn"

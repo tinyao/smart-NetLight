@@ -162,6 +162,7 @@ public class BluetoothChat extends Activity {
 	private View fadePanel;
 
 	private SeekBar groupSeek;
+	private ToggleButton groupAuto;
 	
 	private ListView leafList, groupLeafList;
 	private Spinner leafAddrSpinner, groupSpinner;
@@ -485,6 +486,28 @@ public class BluetoothChat extends Activity {
 				}else{
 					stopAutoAdjust();
 					autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
+					Log.d("DEBUG", "已停止自动调光");
+				}
+			}
+			
+		});
+		
+		groupAuto = (ToggleButton) layout3.findViewById(R.id.group_auto_adjust);
+		
+		groupAuto.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				// TODO Auto-generated method stub
+				ImageView autoImg = (ImageView) layout2.findViewById(R.id.is_auto_on);
+				if(isChecked){
+					groupAutoAdjust();
+//					autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_set));
+					Log.d("DEBUG", "已开启自动调光");
+				}else{
+					groupStopAutoAdjust();
+//					autoImg.setImageDrawable(BluetoothChat.this.getResources().getDrawable(R.drawable.factor_unset));
 					Log.d("DEBUG", "已停止自动调光");
 				}
 			}
@@ -1803,6 +1826,35 @@ public class BluetoothChat extends Activity {
 		
 		return addrList;
 	}
+	
+	
+	public ArrayList<HashMap<String, Object>> getSelectedItemArray(SparseBooleanArray array){
+		ArrayList<HashMap<String, Object>> addrList = new ArrayList<HashMap<String, Object>>();
+		
+		HashMap<String, Object> map; 
+		
+		Log.d("DEBUG", "groupCurrent---" + groupCurrent);
+		groupcursor.moveToPosition(groupCurrent);
+		String leaves = groupcursor.getString(groupcursor.getColumnIndexOrThrow(GroupDBHelper.GROUP_LEAF));
+		Log.d("DEBUG", "leaves---" + leaves);
+		
+		//添加到组内的从机
+		for(int j=0; j<array.size(); j++){
+			if(array.get(j)){
+				map = new HashMap<String, Object>();
+				leafcursor.moveToPosition(j);
+				String addr = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_ADDR));
+				String leafName = leafcursor.getString(leafcursor.getColumnIndexOrThrow(MyDBHelper.LEAF_NAME));
+				map.put("position", Integer.valueOf(j));
+				map.put("address", addr);
+				map.put("leaf_name", leafName);
+				map.put("operate", "join");
+				addrList.add(map);
+			}
+		}
+				
+		return addrList;
+	}
 
 	
 	public void autoAdjust() {
@@ -1820,6 +1872,37 @@ public class BluetoothChat extends Activity {
 		listl.removeFirst().start();
 	}
 
+	
+	public void groupAutoAdjust(){
+		// 获取被选中的item
+		SparseBooleanArray sba = groupLeafList.getCheckedItemPositions();
+		
+		ArrayList<HashMap<String, Object>> addrList = getSelectedItemArray(sba);
+		listl.clear();
+		for(HashMap<String, Object> map:addrList) {
+			listl.addLast(new SendMsgTread(this, convertInt2Hex(
+					Integer.valueOf((String) map.get("address"))) + "EE", 200*addrList.indexOf(map), -1));
+		}
+		
+		while(!listl.isEmpty()){
+			listl.removeFirst().start();
+		}
+	}
+	
+	public void groupStopAutoAdjust(){
+		SparseBooleanArray sba = groupLeafList.getCheckedItemPositions();
+		ArrayList<HashMap<String, Object>> addrList = getSelectedItemArray(sba);
+		
+		listl.clear();
+		for(HashMap<String, Object> map:addrList) {
+			listl.addLast(new SendMsgTread(this, convertInt2Hex(
+					Integer.valueOf((String) map.get("address"))) + "F0", 200*addrList.indexOf(map), -1));
+		}
+		
+		while(!listl.isEmpty()){
+			listl.removeFirst().start();
+		}
+	}
 	
 	public void startQueryLux() {
 		// TODO Auto-generated method stub
